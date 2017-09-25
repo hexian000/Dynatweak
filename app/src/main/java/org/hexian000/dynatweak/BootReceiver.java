@@ -52,13 +52,13 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/msm_hotplug/msm_enabled", "0");
 
 		// Entropy
-		k.setSysctl("kernel.random.read_wakeup_threshold","128");
-		k.setSysctl("kernel.random.write_wakeup_threshold","512");
+		k.setSysctl("kernel.random.read_wakeup_threshold", "128");
+		k.setSysctl("kernel.random.write_wakeup_threshold", "512");
 
 		// VM
-		k.setSysctl("vm.dirty_expire_centisecs","2000");
-		k.setSysctl("vm.dirty_writeback_centisecs","1000");
-		k.setSysctl("vm.laptop_mode","1");
+		k.setSysctl("vm.dirty_expire_centisecs", "2000");
+		k.setSysctl("vm.dirty_writeback_centisecs", "1000");
+		k.setSysctl("vm.laptop_mode", "1");
 
 		// Misc
 		k.setNode("/sys/kernel/fast_charge/force_fast_charge", "1");
@@ -142,7 +142,8 @@ public class BootReceiver extends BroadcastReceiver {
 						profiles.add(profile);
 						break;
 					case 1:
-						if (allGovernors.contains("blu_active"))
+						if (allGovernors.contains("blu_active") &&
+								i == 0)
 							governor.add("blu_active");
 						else
 							governor.add("interactive");
@@ -240,28 +241,28 @@ public class BootReceiver extends BroadcastReceiver {
 		// CPU big.LITTLE
 		switch (profile) {
 			case 0:
-				k.setSysctl("kernel.sched_upmigrate","99");
-				k.setSysctl("kernel.sched_downmigrate","95");
-				k.setSysctl("kernel.sched_spill_nr_run","2");
-				k.setSysctl("kernel.sched_spill_load","90");
+				k.setSysctl("kernel.sched_upmigrate", "99");
+				k.setSysctl("kernel.sched_downmigrate", "95");
+				k.setSysctl("kernel.sched_spill_nr_run", "2");
+				k.setSysctl("kernel.sched_spill_load", "90");
 				break;
 			case 1:
-				k.setSysctl("kernel.sched_upmigrate","95");
-				k.setSysctl("kernel.sched_downmigrate","90");
-				k.setSysctl("kernel.sched_spill_nr_run","4");
-				k.setSysctl("kernel.sched_spill_load","95");
+				k.setSysctl("kernel.sched_upmigrate", "95");
+				k.setSysctl("kernel.sched_downmigrate", "90");
+				k.setSysctl("kernel.sched_spill_nr_run", "4");
+				k.setSysctl("kernel.sched_spill_load", "95");
 				break;
 			case 2:
-				k.setSysctl("kernel.sched_upmigrate","90");
-				k.setSysctl("kernel.sched_downmigrate","90");
-				k.setSysctl("kernel.sched_spill_nr_run","4");
-				k.setSysctl("kernel.sched_spill_load","99");
+				k.setSysctl("kernel.sched_upmigrate", "90");
+				k.setSysctl("kernel.sched_downmigrate", "90");
+				k.setSysctl("kernel.sched_spill_nr_run", "4");
+				k.setSysctl("kernel.sched_spill_load", "99");
 				break;
 			case 3:
-				k.setSysctl("kernel.sched_upmigrate","95");
-				k.setSysctl("kernel.sched_downmigrate","90");
-				k.setSysctl("kernel.sched_spill_nr_run","5");
-				k.setSysctl("kernel.sched_spill_load","100");
+				k.setSysctl("kernel.sched_upmigrate", "95");
+				k.setSysctl("kernel.sched_downmigrate", "90");
+				k.setSysctl("kernel.sched_spill_nr_run", "5");
+				k.setSysctl("kernel.sched_spill_load", "100");
 				break;
 		}
 
