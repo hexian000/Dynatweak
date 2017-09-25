@@ -1,0 +1,34 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Dynatweak</string>
+    <string name="app_introduction" tools:ignore="TypographyFractions">" · 支持高通APQ8064、MSM8974、MSM8996、MSM8998，其他平台不做保证，请自行测试\n · 非高通平台用用监视器就可以了\n · 关闭或卸载后、重启手机才会生效"</string>
+    <string name="app_master_switch">总开关（支持开机自启）</string>
+    <string name="app_device_profile">配置文件</string>
+    <string name="app_hotplug_profile">热插拔模式</string>
+    <string-array name="interactive_profile">
+        <item>节能（GPU最大节能）</item>
+        <item>平衡（日常使用推荐）</item>
+        <item>高性能（GPU平衡）</item>
+        <item>游戏（GPU最高性能）</item>
+    </string-array>
+    <string-array name="hotplug_profile">
+        <item>全核心在线</item>
+        <item>小核模式/双核模式</item>
+        <item>使用热插拔驱动（需要内核支持）</item>
+    </string-array>
+    <string name="app_additional_functions">- 附加功能 -</string>
+    <string name="app_service">Dynatweak 服务总开关（需要后台运行）：\n下面的功能都依赖于此服务，关闭此服务Dynatweak将没有任何后台活动</string>
+    <string name="app_monitor_overlay">监视悬浮窗</string>
+    <string name="app_userspace_thermal">使用Dynatweak服务进行温控，降低手机发热，避免过热重启，与热插拔驱动不兼容</string>
+    <string name="kernel_unsupported">不支持的内核</string>
+    <string name="low_frequency">警告：CPU主频太低</string>
+    <string name="operation_success">操作成功</string>
+    <string name="operation_failed">操作失败</string>
+    <string name="boot_success">Dynatweak 启用成功</string>
+    <string name="boot_failed">Dynatweak 启用失败</string>
+    <string name="boot_exception">Dynatweak 发生意外错误</string>
+    <string name="error_root">错误：无法连接到系统内核（已授予root权限？）</string>
+    <string name="interactive_not_found">内核不支持interactive调度器</string>
+    <string name="reboot_suggest">重新启动后才能恢复系统默认设置</string>
+    <string name="error_overlay_permission">错误：没有获得“在其他应用的上层显示”权限</string>
+    <string name="monitor_loading">Loading…</string>
+</resources>
