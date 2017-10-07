@@ -116,71 +116,85 @@ public class BootReceiver extends BroadcastReceiver {
 		List<Integer> profiles = new ArrayList<>();
 		final boolean multiCluster = allPolicy.size() > 1;
 
-		if (!multiCluster) {
-			// 单簇处理器
+		if (!multiCluster) { // 单簇处理器
 			Log.d("Dynatweak", "single-cluster profile=" + profile);
-			// 优先选择zzmoove调度器
-			if (allGovernors.contains("zzmoove")) {
-				governor.add("zzmoove");
+			switch (profile) {
+				case 0: {
+					final String[] preferList = {"zzmoove"};
+					governor.add(preferGovernor(allGovernors, preferList));
+					break;
+				}
+				case 1: {
+					final String[] preferList = {"blu_active", "zzmoove"};
+					governor.add(preferGovernor(allGovernors, preferList));
+					break;
+				}
+				case 2: {
+					final String[] preferList = {"ondemand", "blu_active", "zzmoove"};
+					governor.add(preferGovernor(allGovernors, preferList));
+					break;
+				}
+				case 3: {
+					final String[] preferList = {"performance", "ondemand", "blu_active", "zzmoove"};
+					governor.add(preferGovernor(allGovernors, preferList));
+					break;
+				}
 			}
-			// 使用ondemand实现高性能/游戏模式
-			else if (allGovernors.contains("ondemand") &&
-					profile > 1) {
-				governor.add("ondemand");
-			} else governor.add("interactive");
 			profiles.add(profile);
-		} else {
-			// 多簇处理器
+		} else { // 多簇处理器
 			Log.d("Dynatweak", "multi-cluster profile=" + profile);
 			for (int i = 0; i < allPolicy.size(); i++) {
 				switch (profile) {
-					case 0:
-						if (allGovernors.contains("zzmoove"))
-							governor.add("zzmoove");
-						else
-							governor.add("interactive");
-						profiles.add(profile);
-						break;
-					case 1:
-						if (allGovernors.contains("blu_active") &&
-								i == 0)
-							governor.add("blu_active");
-						else
-							governor.add("interactive");
+					case 0: {
 						if (i == 0) {
+							final String[] preferList = {"zzmoove"};
+							governor.add(preferGovernor(allGovernors, preferList));
+						} else {
+							final String[] preferList = {"powersave"};
+							governor.add(preferGovernor(allGovernors, preferList));
+						}
+						profiles.add(0);
+						break;
+					}
+					case 1: {
+						if (i == 0) {
+							final String[] preferList = {"blu_active", "zzmoove"};
+							governor.add(preferGovernor(allGovernors, preferList));
 							profiles.add(1);
 						} else {
+							final String[] preferList = {"zzmoove"};
+							governor.add(preferGovernor(allGovernors, preferList));
 							profiles.add(0);
 						}
 						break;
-					case 2:
-						if (allGovernors.contains("ondemand") &&
-								i == 0)
-							governor.add("ondemand");
-						else if (allGovernors.contains("blu_active"))
-							governor.add("blu_active");
-						else
-							governor.add("interactive");
-						profiles.add(profile);
+					}
+					case 2: {
+						if (i == 0) {
+							final String[] preferList = {"ondemand", "blu_active", "zzmoove"};
+							governor.add(preferGovernor(allGovernors, preferList));
+							profiles.add(2);
+						} else {
+							final String[] preferList = {"blu_active", "zzmoove"};
+							governor.add(preferGovernor(allGovernors, preferList));
+							profiles.add(1);
+						}
 						break;
-					case 3:
-						if (allGovernors.contains("performance") &&
-								i == 0)
-							governor.add("performance");
-						else if (allGovernors.contains("ondemand"))
-							governor.add("ondemand");
-						else if (allGovernors.contains("blu_active"))
-							governor.add("blu_active");
-						else
-							governor.add("interactive");
-						profiles.add(profile);
+					}
+					case 3: {
+						final String[] preferList = {"performance", "ondemand", "blu_active", "zzmoove"};
+						governor.add(preferGovernor(allGovernors, preferList));
+						profiles.add(3);
 						break;
+					}
 				}
 			}
 		}
 
 		// CPU Frequency
-		for (Kernel.CpuCore cpu : k.cpuCores) {
+		for (
+				Kernel.CpuCore cpu : k.cpuCores)
+
+		{
 			for (int trial = 0; trial < 3; trial++) {
 				try {
 					cpu.setOnline(true, false);
@@ -198,7 +212,10 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// Per cluster governor tweak
-		for (int i = 0; i < allPolicy.size(); i++) {
+		for (
+				int i = 0; i < allPolicy.size(); i++)
+
+		{
 			Kernel.ClusterPolicy clusterPolicy = allPolicy.get(i);
 			String policy = clusterPolicy.getPolicyPath();
 			Log.d("Dynatweak", "tweaking cluster " + i + " governor=" + governor.get(i) + " profile=" + profiles.get(i));
@@ -239,7 +256,9 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// CPU big.LITTLE
-		switch (profile) {
+		switch (profile)
+
+		{
 			case 0:
 				k.setSysctl("kernel.sched_upmigrate", "99");
 				k.setSysctl("kernel.sched_downmigrate", "95");
@@ -269,7 +288,10 @@ public class BootReceiver extends BroadcastReceiver {
 		// CPU Boost
 		k.setNode("/sys/module/cpu_boost/parameters/boost_ms", "40");
 		k.setNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
-		for (Kernel.CpuCore cpu : k.cpuCores) {
+		for (
+				Kernel.CpuCore cpu : k.cpuCores)
+
+		{
 			String boostFreq, boostFreq_s2;
 			if (multiCluster) {
 				if (cpu.getCluster() == 0 && cpu.getId() < 2) {
@@ -297,7 +319,9 @@ public class BootReceiver extends BroadcastReceiver {
 		// GPU
 		final String gpuNodeRoot = "/sys/class/kgsl/kgsl-3d0";
 		Integer num_pwrlevels = null;
-		if (k.hasNode(gpuNodeRoot + "/num_pwrlevels")) {
+		if (k.hasNode(gpuNodeRoot + "/num_pwrlevels"))
+
+		{
 			try {
 				num_pwrlevels = Integer.parseInt(
 						k.readNode(gpuNodeRoot + "/num_pwrlevels"));
@@ -305,7 +329,9 @@ public class BootReceiver extends BroadcastReceiver {
 			}
 		}
 
-		switch (profile) {
+		switch (profile)
+
+		{
 			case 0: // maximize battery life
 				if (num_pwrlevels != null) {
 					try {
@@ -351,7 +377,9 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// hotplug
-		switch (hotplug) {
+		switch (hotplug)
+
+		{
 			case 0: // all cores
 				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 				break;
@@ -410,6 +438,14 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		k.releaseRoot();
+	}
+
+	private static String preferGovernor(List<String> allGovernors, String[] names) {
+		for (String name : names) {
+			if (allGovernors.contains(name))
+				return name;
+		}
+		return "interactive";
 	}
 
 	private static void tweakGovernor(Kernel k, Kernel.CpuCore cpu, String policy, String governor, int profile) throws IOException {
