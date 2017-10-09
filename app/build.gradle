@@ -9,7 +9,6 @@ android {
         targetSdkVersion 25
         versionCode 38
         versionName "5.1.10"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
