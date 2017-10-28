@@ -435,7 +435,7 @@ public class BootReceiver extends BroadcastReceiver {
 
 	private static void tweakGovernor(Kernel k, Kernel.CpuCore cpu, String policy, String governor, int profile) throws IOException {
 		switch (profile) {
-			case 0: // powersave
+			case PROFILE_POWERSAVE: // powersave
 				switch (governor) {
 					case "interactive":
 						k.setNode(policy + "/interactive/hispeed_freq", cpu.fitFrequency(1000000) + "");
@@ -572,7 +572,7 @@ public class BootReceiver extends BroadcastReceiver {
 						break;
 				}
 				break;
-			case 1: // balanced
+			case PROFILE_BANLANCED: // balanced
 				switch (governor) {
 					case "interactive":
 						k.setNode(policy + "/interactive/hispeed_freq", cpu.fitFrequency(1200000) + "");
@@ -721,7 +721,7 @@ public class BootReceiver extends BroadcastReceiver {
 						break;
 				}
 				break;
-			case 2: // performance
+			case PROFILE_PERFORMANCE: // performance
 				switch (governor) {
 					case "interactive":
 						k.setNode(policy + "/interactive/above_hispeed_delay", "0 1000000:10000 1700000:20000 2400000:30000");
@@ -881,7 +881,7 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/ondemand/up_threshold_multi_core", "80");
 						break;
 				}
-			case 3: //game
+			case PROFILE_GAMING: //gaming
 				switch (governor) {
 					case "interactive":
 						k.setNode(policy + "/interactive/hispeed_freq", cpu.fitFrequency(1400000) + "");
