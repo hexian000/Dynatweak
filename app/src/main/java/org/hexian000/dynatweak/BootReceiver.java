@@ -49,7 +49,6 @@ public class BootReceiver extends BroadcastReceiver {
 		// VM
 		k.setSysctl("vm.dirty_expire_centisecs", "2000");
 		k.setSysctl("vm.dirty_writeback_centisecs", "1000");
-		k.setSysctl("vm.laptop_mode", "1");
 
 		// Misc
 		k.setNode("/sys/kernel/fast_charge/force_fast_charge", "1");
