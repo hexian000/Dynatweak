@@ -20,6 +20,23 @@ public class MainActivity extends Activity {
 	private ToggleButton toggleService, toggleMonitor, toggleThermal;
 	private Spinner spinnerProfile, spinnerHotplug;
 
+	static void loadProperties(Context context) {
+		if (MainActivity.properties == null) {
+			MainActivity.properties = new Properties();
+			try {
+				MainActivity.properties.load(context.openFileInput("preferences"));
+			} catch (IOException ignore) {
+			}
+		}
+	}
+
+	static void saveProperties(Context context) {
+		try {
+			properties.store(context.openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE), null);
+		} catch (IOException ignore) {
+		}
+	}
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -200,26 +217,9 @@ public class MainActivity extends Activity {
 		});
 	}
 
-	static void loadProperties(Context context) {
-		if (MainActivity.properties == null) {
-			MainActivity.properties = new Properties();
-			try {
-				MainActivity.properties.load(context.openFileInput("preferences"));
-			} catch (IOException ignore) {
-			}
-		}
-	}
-
-	static void saveProperties(Context context) {
-		try {
-			properties.store(context.openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE), null);
-		} catch (IOException ignore) {
-		}
-	}
-
 	private void applySettings() {
 		final int hotplug_profile = Integer.parseInt(properties.getProperty("hotplug_profile", "0"));
-		final int profile = Integer.parseInt(properties.getProperty("interactive_profile", "1"));
+		final int profile = Integer.parseInt(properties.getProperty("interactive_profile", "0"));
 		final ProgressHandler handler = new ProgressHandler(this);
 		new Thread() {
 			@Override

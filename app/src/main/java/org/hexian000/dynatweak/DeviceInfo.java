@@ -17,8 +17,8 @@ import java.util.Locale;
 class DeviceInfo {
 
 	private final boolean tzBuild = false;
-	private List<DeviceNode> nodes;
 	CpuStat stat;
+	private List<DeviceNode> nodes;
 
 	DeviceInfo(Kernel k) {
 		nodes = new ArrayList<>();
@@ -77,13 +77,13 @@ class DeviceInfo {
 
 	class CpuStat implements DeviceNode {
 
+		long cpu_iowait[], cpu_idle[], cpu_total[];
 		private int count;
 		private double freq_all;
 		private long last_iowait[], last_idle[], last_total[];
 		private long cpu_all_idle, cpu_all_iowait, cpu_all_total;
 		private long last_cpu_all_idle, last_cpu_all_iowait, last_cpu_all_total;
 		private RandomAccessFile stat;
-		long cpu_iowait[], cpu_idle[], cpu_total[];
 
 		void initialize(int count) {
 			last_iowait = new long[count];
@@ -284,11 +284,6 @@ class DeviceInfo {
 		String gpu_freq = null, governor = null;
 		boolean gpu_temp;
 
-		@Override
-		public boolean hasAny() {
-			return gpu_freq != null || governor != null || gpu_temp;
-		}
-
 		GPU() throws IOException {
 			Kernel k = Kernel.getInstance();
 			gpu_freq = "/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq";
@@ -325,6 +320,11 @@ class DeviceInfo {
 		}
 
 		@Override
+		public boolean hasAny() {
+			return gpu_freq != null || governor != null || gpu_temp;
+		}
+
+		@Override
 		public void generateHtml(StringBuilder out) throws IOException {
 			Kernel k = Kernel.getInstance();
 			out.append("gpu: ");
@@ -358,11 +358,6 @@ class DeviceInfo {
 		List<MaxTempReader> sensors = new ArrayList<>();
 		int soc_id;
 
-		@Override
-		public boolean hasAny() {
-			return sensors.size() > 0;
-		}
-
 		Sensors() throws IOException {
 			String path;
 			Kernel k = Kernel.getInstance();
@@ -375,6 +370,11 @@ class DeviceInfo {
 				}
 				i++;
 			}
+		}
+
+		@Override
+		public boolean hasAny() {
+			return sensors.size() > 0;
 		}
 
 		@Override

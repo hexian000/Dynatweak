@@ -5,6 +5,7 @@
     <string name="app_device_profile">配置文件</string>
     <string name="app_hotplug_profile">热插拔模式</string>
     <string-array name="interactive_profile">
+        <item>系统默认（不做改变）</item>
         <item>节能（GPU最大节能）</item>
         <item>平衡（日常使用推荐）</item>
         <item>高性能（GPU平衡）</item>

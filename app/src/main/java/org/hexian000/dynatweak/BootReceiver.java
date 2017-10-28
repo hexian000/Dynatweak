@@ -16,27 +16,14 @@ import java.util.List;
  */
 public class BootReceiver extends BroadcastReceiver {
 
-	@Override
-	public void onReceive(Context context, Intent intent) {
-		try {
-			MainActivity.loadProperties(context);
-			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
-				try {
-					tweak(Integer.parseInt(MainActivity.properties.getProperty("hotplug_profile", "0")),
-							Integer.parseInt(MainActivity.properties.getProperty("interactive_profile", "1")));
-					Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
-				} catch (Throwable e) {
-					Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
-				}
-			}
-			boolean dynatweak_service = MainActivity.properties.getProperty("dynatweak_service", "disabled").equals("enabled");
-			if (dynatweak_service) {
-				context.startService(new Intent(context, DynatweakService.class));
-			}
-		} catch (Throwable ex) {
-			Toast.makeText(context, R.string.boot_exception, Toast.LENGTH_SHORT).show();
-		}
-	}
+	private static final int PROFILE_DISABLED = 0;
+	private static final int PROFILE_POWERSAVE = 1;
+	private static final int PROFILE_BANLANCED = 2;
+	private static final int PROFILE_PERFORMANCE = 3;
+	private static final int PROFILE_GAMING = 4;
+	private static final int HOTPLUG_ALLCORES = 0;
+	private static final int HOTPLUG_LITTLECORES = 1;
+	private static final int HOTPLUG_DRIVER = 2;
 
 	static void tweak(int hotplug, int profile) throws IOException {
 		Kernel k = Kernel.getInstance();
@@ -44,6 +31,10 @@ public class BootReceiver extends BroadcastReceiver {
 
 		// CPU Hotplug
 		k.runAsRoot("stop mpdecision");
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException ignore) {
+		}
 		k.setNode("/proc/hps/enabled", "0");
 		k.setNode("/sys/module/blu_plug/parameters/enabled", "0");
 		k.setNode("/sys/module/autosmp/parameters/enabled", "N");
@@ -119,22 +110,24 @@ public class BootReceiver extends BroadcastReceiver {
 		if (!multiCluster) { // 单簇处理器
 			Log.d("Dynatweak", "single-cluster profile=" + profile);
 			switch (profile) {
-				case 0: {
+				case PROFILE_DISABLED:
+					break;
+				case PROFILE_POWERSAVE: {
 					final String[] preferList = {"zzmoove"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					break;
 				}
-				case 1: {
+				case PROFILE_BANLANCED: {
 					final String[] preferList = {"blu_active", "zzmoove"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					break;
 				}
-				case 2: {
+				case PROFILE_PERFORMANCE: {
 					final String[] preferList = {"ondemand", "blu_active", "zzmoove"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					break;
 				}
-				case 3: {
+				case PROFILE_GAMING: {
 					final String[] preferList = {"performance", "ondemand", "blu_active", "zzmoove"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					break;
@@ -145,7 +138,9 @@ public class BootReceiver extends BroadcastReceiver {
 			Log.d("Dynatweak", "multi-cluster profile=" + profile);
 			for (int i = 0; i < allPolicy.size(); i++) {
 				switch (profile) {
-					case 0: {
+					case PROFILE_DISABLED:
+						break;
+					case PROFILE_POWERSAVE: {
 						if (i == 0) {
 							final String[] preferList = {"zzmoove"};
 							governor.add(preferGovernor(allGovernors, preferList));
@@ -156,7 +151,7 @@ public class BootReceiver extends BroadcastReceiver {
 						profiles.add(0);
 						break;
 					}
-					case 1: {
+					case PROFILE_BANLANCED: {
 						if (i == 0) {
 							final String[] preferList = {"blu_active", "zzmoove"};
 							governor.add(preferGovernor(allGovernors, preferList));
@@ -168,7 +163,7 @@ public class BootReceiver extends BroadcastReceiver {
 						}
 						break;
 					}
-					case 2: {
+					case PROFILE_PERFORMANCE: {
 						if (i == 0) {
 							final String[] preferList = {"ondemand", "blu_active", "zzmoove"};
 							governor.add(preferGovernor(allGovernors, preferList));
@@ -180,7 +175,7 @@ public class BootReceiver extends BroadcastReceiver {
 						}
 						break;
 					}
-					case 3: {
+					case PROFILE_GAMING: {
 						final String[] preferList = {"performance", "ondemand", "blu_active", "zzmoove"};
 						governor.add(preferGovernor(allGovernors, preferList));
 						profiles.add(3);
@@ -191,20 +186,19 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// CPU Frequency
-		for (
-				Kernel.CpuCore cpu : k.cpuCores)
-
-		{
+		for (Kernel.CpuCore cpu : k.cpuCores) {
 			for (int trial = 0; trial < 3; trial++) {
 				try {
 					cpu.setOnline(true, false);
 					cpu.setScalingMinFrequency(cpu.getMinFrequency(), false);
 					cpu.setScalingMaxFrequency(cpu.getMaxFrequency(), false);
-					cpu.setGovernor(governor.get(cpu.getCluster()), false);
 					// Per cpu governor tweak
-					tweakGovernor(k, cpu, cpu.getPath() + "/cpufreq",
-							governor.get(cpu.getCluster()), profiles.get(cpu.getCluster()));
-					cpu.grantAllPermissions();
+					if (profile != PROFILE_DISABLED && allPolicy.size() < 1) {
+						cpu.setGovernor(governor.get(cpu.getCluster()), false);
+						tweakGovernor(k, cpu, cpu.getPath() + "/cpufreq",
+								governor.get(cpu.getCluster()), profiles.get(cpu.getCluster()));
+					}
+					cpu.grantRequiredPermissions();
 					break;
 				} catch (Throwable ignore) {
 				}
@@ -212,72 +206,73 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// Per cluster governor tweak
-		for (
-				int i = 0; i < allPolicy.size(); i++)
-
-		{
+		for (int i = 0; i < allPolicy.size(); i++) {
 			Kernel.ClusterPolicy clusterPolicy = allPolicy.get(i);
 			String policy = clusterPolicy.getPolicyPath();
-			Log.d("Dynatweak", "tweaking cluster " + i + " governor=" + governor.get(i) + " profile=" + profiles.get(i));
+			if (profile != PROFILE_DISABLED)
+				Log.d("Dynatweak", "tweaking cluster " + i + " governor=" + governor.get(i) + " profile=" + profiles.get(i));
 			Kernel.CpuCore cpu = k.cpuCores.get(clusterPolicy.getStartCpu());
 			// Qualcomm core control
 			if (k.hasNode(cpu.getPath() + "/core_ctl/max_cpus")) {
 				k.setNode(cpu.getPath() + "/core_ctl/max_cpus", clusterPolicy.getCpuCount() + "");
 				if (i != 0) {
 					switch (profile) {
-						case 0:
+						case PROFILE_POWERSAVE:
 							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
-						case 1:
+						case PROFILE_BANLANCED:
 							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
-						case 2:
+						case PROFILE_PERFORMANCE:
 							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
 							break;
-						case 3:
+						case PROFILE_GAMING:
 							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
 							break;
 					}
 				} else {
 					switch (profile) {
-						case 0:
+						case PROFILE_DISABLED:
+							break;
+						case PROFILE_POWERSAVE:
 							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "1");
 							break;
-						case 1:
-						case 2:
-						case 3:
+						case PROFILE_BANLANCED:
+						case PROFILE_PERFORMANCE:
+						case PROFILE_GAMING:
 							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
 							break;
 					}
 				}
 			}
 			// Per policy
-			tweakGovernor(k, cpu, policy, governor.get(i), profiles.get(i));
+			if (profile != PROFILE_DISABLED)
+				tweakGovernor(k, cpu, policy, governor.get(i), profiles.get(i));
 		}
 
 		// CPU big.LITTLE
-		switch (profile)
-
-		{
-			case 0:
+		switch (profile) {
+			case PROFILE_DISABLED:
+				break;
+			case PROFILE_POWERSAVE:
 				k.setSysctl("kernel.sched_upmigrate", "99");
 				k.setSysctl("kernel.sched_downmigrate", "95");
 				k.setSysctl("kernel.sched_spill_nr_run", "2");
 				k.setSysctl("kernel.sched_spill_load", "90");
 				break;
-			case 1:
+			case PROFILE_BANLANCED:
 				k.setSysctl("kernel.sched_upmigrate", "95");
 				k.setSysctl("kernel.sched_downmigrate", "90");
 				k.setSysctl("kernel.sched_spill_nr_run", "4");
 				k.setSysctl("kernel.sched_spill_load", "95");
 				break;
-			case 2:
+			case PROFILE_PERFORMANCE:
 				k.setSysctl("kernel.sched_upmigrate", "90");
 				k.setSysctl("kernel.sched_downmigrate", "90");
 				k.setSysctl("kernel.sched_spill_nr_run", "4");
 				k.setSysctl("kernel.sched_spill_load", "99");
 				break;
-			case 3:
+			case PROFILE_GAMING:
 				k.setSysctl("kernel.sched_upmigrate", "95");
 				k.setSysctl("kernel.sched_downmigrate", "90");
 				k.setSysctl("kernel.sched_spill_nr_run", "5");
@@ -288,10 +283,7 @@ public class BootReceiver extends BroadcastReceiver {
 		// CPU Boost
 		k.setNode("/sys/module/cpu_boost/parameters/boost_ms", "40");
 		k.setNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
-		for (
-				Kernel.CpuCore cpu : k.cpuCores)
-
-		{
+		for (Kernel.CpuCore cpu : k.cpuCores) {
 			String boostFreq, boostFreq_s2;
 			if (multiCluster) {
 				if (cpu.getCluster() == 0 && cpu.getId() < 2) {
@@ -319,9 +311,7 @@ public class BootReceiver extends BroadcastReceiver {
 		// GPU
 		final String gpuNodeRoot = "/sys/class/kgsl/kgsl-3d0";
 		Integer num_pwrlevels = null;
-		if (k.hasNode(gpuNodeRoot + "/num_pwrlevels"))
-
-		{
+		if (k.hasNode(gpuNodeRoot + "/num_pwrlevels")) {
 			try {
 				num_pwrlevels = Integer.parseInt(
 						k.readNode(gpuNodeRoot + "/num_pwrlevels"));
@@ -329,10 +319,10 @@ public class BootReceiver extends BroadcastReceiver {
 			}
 		}
 
-		switch (profile)
-
-		{
-			case 0: // maximize battery life
+		switch (profile) {
+			case PROFILE_DISABLED:
+				break;
+			case PROFILE_POWERSAVE: // maximize battery life
 				if (num_pwrlevels != null) {
 					try {
 						k.setNode(gpuNodeRoot + "/max_pwrlevel", (num_pwrlevels - 1) + "");
@@ -341,7 +331,7 @@ public class BootReceiver extends BroadcastReceiver {
 					}
 				}
 				break;
-			case 1: // governor controlled with idler
+			case PROFILE_BANLANCED: // governor controlled with idler
 				// Adreno Idler
 				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "Y");
 				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_downdifferential", "40");
@@ -355,7 +345,7 @@ public class BootReceiver extends BroadcastReceiver {
 					}
 				}
 				break;
-			case 2: // governor controlled without idler
+			case PROFILE_PERFORMANCE: // governor controlled without idler
 				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "N");
 				if (num_pwrlevels != null) {
 					try {
@@ -365,7 +355,7 @@ public class BootReceiver extends BroadcastReceiver {
 					}
 				}
 				break;
-			case 3: // maximize performance
+			case PROFILE_GAMING: // maximize performance
 				if (num_pwrlevels != null) {
 					try {
 						k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
@@ -377,13 +367,11 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// hotplug
-		switch (hotplug)
-
-		{
-			case 0: // all cores
+		switch (hotplug) {
+			case HOTPLUG_ALLCORES: // all cores
 				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 				break;
-			case 1: // little cluster or dual-core
+			case HOTPLUG_LITTLECORES: // little cluster or dual-core
 				if (multiCluster) {
 					int mask = 0, count = 0;
 					for (Kernel.CpuCore cpu : k.cpuCores) {
@@ -414,25 +402,22 @@ public class BootReceiver extends BroadcastReceiver {
 				}
 				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
 				break;
-			case 2: // use hotplug driver
-				do {
-					boolean ret;
-					ret = k.trySetNode("/sys/kernel/alucard_hotplug/hotplug_enable", "1");
-					if (ret) break;
-					ret = k.trySetNode("/sys/module/msm_hotplug/msm_enabled", "1");
-					if (ret) break;
-					ret = k.trySetNode("/sys/module/blu_plug/parameters/enabled", "1");
-					if (ret) break;
-					ret = k.trySetNode("/sys/module/autosmp/parameters/enabled", "Y");
-					if (ret) break;
-					ret = k.trySetNode("/sys/kernel/alucard_hotplug/hotplug_enable", "1");
-					if (ret) break;
-					ret = k.trySetNode("/sys/kernel/msm_mpdecision/conf/enabled", "1");
-					if (ret) break;
-					ret = k.trySetNode("/proc/hps/enabled", "1");
-					if (ret) break;
+			case HOTPLUG_DRIVER: // use hotplug driver
+				final String[][] s = {{"/sys/kernel/alucard_hotplug/hotplug_enable", "1"},
+						{"/sys/module/msm_hotplug/msm_enabled", "1"},
+						{"/sys/module/blu_plug/parameters/enabled", "1"},
+						{"/sys/module/autosmp/parameters/enabled", "Y"},
+						{"/sys/kernel/msm_mpdecision/conf/enabled", "1"},
+						{"/proc/hps/enabled", "1"}
+				};
+				boolean success = false;
+				for (String[] param : s) {
+					success = k.trySetNode(param[0], param[1]);
+					if (success)
+						break;
+				}
+				if (!success)
 					k.runAsRoot("start mpdecision");
-				} while (false);
 				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "2");
 				break;
 		}
@@ -1054,6 +1039,28 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/ondemand/up_threshold_multi_core", "80");
 						break;
 				}
+		}
+	}
+
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		try {
+			MainActivity.loadProperties(context);
+			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
+				try {
+					tweak(Integer.parseInt(MainActivity.properties.getProperty("hotplug_profile", "0")),
+							Integer.parseInt(MainActivity.properties.getProperty("interactive_profile", "1")));
+					Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
+				} catch (Throwable e) {
+					Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+				}
+			}
+			boolean dynatweak_service = MainActivity.properties.getProperty("dynatweak_service", "disabled").equals("enabled");
+			if (dynatweak_service) {
+				context.startService(new Intent(context, DynatweakService.class));
+			}
+		} catch (Throwable ex) {
+			Toast.makeText(context, R.string.boot_exception, Toast.LENGTH_SHORT).show();
 		}
 	}
 }

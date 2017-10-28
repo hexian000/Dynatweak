@@ -7,8 +7,8 @@ android {
         applicationId "org.hexian000.dynatweak"
         minSdkVersion 19
         targetSdkVersion 25
-        versionCode 38
-        versionName "5.1.10"
+        versionCode 39
+        versionName "5.1.11"
     }
     buildTypes {
         release {

@@ -12,18 +12,151 @@ import java.util.*;
 class Kernel {
 
 	private static Kernel instance = null;
+	List<CpuCore> cpuCores;
+	String COMMAND_echo = "echo";
+	String COMMAND_sysctl = "sysctl";
+	String COMMAND_chmod = "chmod";
+	private Process root;
+	// private InputStream stdout, stderr;
+	private PrintStream exec;
+	private int raw_id;
+	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
+	private List<ClusterPolicy> clusterPolicies;
+
+	private Kernel() throws IOException {
+		raw_id = -1;
+		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
+		for (String node : raw_id_nodes) {
+			try {
+				if (!hasNode(node)) continue;
+				grantRead(node);
+				raw_id = Integer.parseInt(readNode(node));
+				break;
+			} catch (Throwable ignore) {
+			}
+		}
+		try {
+			if (raw_id == 2375) { // Xiaomi Mi 5
+				batteryTemp = new AdaptiveTempReader(this, getThermalZone(22));
+			} else {
+				batteryTemp = new AdaptiveTempReader(this, "/sys/class/power_supply/battery/temp");
+			}
+		} catch (Throwable ignore) {
+		}
+
+		if (raw_id == 1972 || raw_id == 1973 || raw_id == 1974) { // Xiaomi Mi 3/4/Note
+			try {
+				socTemp = new AdaptiveTempReader(this, getThermalZone(0));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
+			} catch (Throwable ignore) {
+			}
+		} else if (raw_id == 1812) { // Xiaomi Mi 2/2S
+			try {
+				socTemp = new AdaptiveTempReader(this, getThermalZone(0));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(this, getThermalZone(2));
+			} catch (Throwable ignore) {
+			}
+		} else if (raw_id == 94) { // ONEPLUS A5000
+			try {
+				socTemp = new AdaptiveTempReader(this, getThermalZone(1));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(this, getThermalZone(20));
+			} catch (Throwable ignore) {
+			}
+		} else if (raw_id == 95) { // ONEPLUS A3010
+			try {
+				socTemp = new AdaptiveTempReader(this, getThermalZone(22));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
+			} catch (Throwable ignore) {
+			}
+		} else if (raw_id == 2375) { // Xiaomi Mi 5
+			try {
+				socTemp = new AdaptiveTempReader(this, getThermalZone(1));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(this, getThermalZone(16));
+			} catch (Throwable ignore) {
+			}
+		}
+
+		clusterPolicies = new ArrayList<>();
+		final String cpuPath = "/sys/devices/system/cpu";
+		int cpuId = 0;
+		cpuCores = new ArrayList<>();
+		while (new File(cpuPath + "/cpu" + cpuId).exists()) {
+			try {
+				CpuCore cpu;
+				if (raw_id == 1972 || raw_id == 1973 || raw_id == 1974) { // Xiaomi Mi 3/4/Note
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 5));
+				} else if (raw_id == 94) { // ONEPLUS A5000
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 11));
+				} else if (raw_id == 95) { // ONEPLUS A3010
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 5));
+				} else if (raw_id == 2375) { // Xiaomi Mi 5
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 9));
+				} else if (raw_id == 1812) { // Xiaomi Mi 2/2S
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 7));
+				} else {
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							null);
+				}
+				cpuCores.add(cpu);
+			} catch (Throwable ignore) {
+			}
+			cpuId++;
+		}
+
+		int cluster = 0;
+		for (CpuCore cpu : cpuCores) {
+			boolean exist = false;
+			for (ClusterPolicy clusterPolicy : clusterPolicies) {
+				for (int affectedCpu : clusterPolicy.AffectedCpu) {
+					if (cpu.getId() == affectedCpu) {
+						exist = true;
+						break;
+					}
+				}
+				if (exist) break;
+			}
+			if (exist) continue;
+			try {
+				String policy = cpu.getPath() + "/cpufreq";
+				String[] raw = readNode(policy + "/affected_cpus").split(" ");
+				int[] affected_cpus = new int[raw.length];
+				int i = 0;
+				for (String raw_id : raw) {
+					int id = Integer.parseInt(raw_id);
+					cpuCores.get(id).setCluster(cluster);
+					affected_cpus[i++] = id;
+				}
+				clusterPolicies.add(new ClusterPolicy(cpu.getId(), affected_cpus, policy));
+				cluster++;
+			} catch (Throwable ignore) {
+			}
+		}
+	}
 
 	static Kernel getInstance() throws IOException {
 		if (instance == null) instance = new Kernel();
 		return instance;
 	}
-
-	private Process root;
-	// private InputStream stdout, stderr;
-	private PrintStream exec;
-	private boolean useBusybox;
-	private int raw_id;
-	List<CpuCore> cpuCores;
 
 	boolean hasNode(String path) {
 		return new File(path).exists();
@@ -32,8 +165,6 @@ class Kernel {
 	String getThermalZone(int id) {
 		return "/sys/class/thermal/thermal_zone" + id + "/temp";
 	}
-
-	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	boolean hasSocTemperature() {
 		return socTemp != null;
@@ -107,8 +238,6 @@ class Kernel {
 		}
 	}
 
-	private List<ClusterPolicy> clusterPolicies;
-
 	List<ClusterPolicy> getAllPolicies() {
 		return clusterPolicies;
 	}
@@ -132,7 +261,7 @@ class Kernel {
 
 	void changeMode(String path, String permission) {
 		try {
-			runAsRoot("chmod " + permission + " \'" + path + "\'");
+			runAsRoot(COMMAND_chmod + " " + permission + " \'" + path + "\'");
 		} catch (IOException e) {
 			Log.w("Dynatweak", "chmod failed", e);
 		}
@@ -144,7 +273,7 @@ class Kernel {
 
 	void setNode(String path, String value) throws IOException {
 		if (hasNode(path)) {
-			runAsRoot("echo '" + value + "'>'" + path + "'\n");
+			runAsRoot(COMMAND_echo + " '" + value + "'>'" + path + "'\n");
 		}
 	}
 
@@ -177,7 +306,7 @@ class Kernel {
 	void setSysctl(String node, String value) {
 		try {
 			if (!trySetNode("/proc/sys/" + node.replace('.', '/'), value))
-				runAsRoot("sysctl -w " + node + "=" + value);
+				runAsRoot(COMMAND_sysctl + " -w " + node + "=" + value);
 		} catch (IOException e) {
 			Log.w("Dynatweak", "setSysctl failed", e);
 		}
@@ -213,39 +342,20 @@ class Kernel {
 					break;
 				applets.add(line);
 			}
-			useBusybox = true;
-			do {
-				useBusybox = applets.contains("sh");
-				if (!useBusybox) break;
-				useBusybox = applets.contains("chmod");
-				if (!useBusybox) break;
-				useBusybox = applets.contains("echo");
-				if (!useBusybox) break;
-				useBusybox = applets.contains("cat");
-				if (!useBusybox) break;
-				useBusybox = applets.contains("sysctl");
-			} while (false);
-
 			String rootCommand;
-			if (useBusybox) rootCommand = "su -c 'busybox sh'";
-			else rootCommand = "su";
+			if (applets.contains("sh")) rootCommand = "su -c 'busybox sh'";
+			else {
+				rootCommand = "su";
+				if (applets.contains("echo"))
+					COMMAND_echo = "busybox echo";
+				if (applets.contains("chmod"))
+					COMMAND_chmod = "busybox chmod";
+				if (applets.contains("sysctl"))
+					COMMAND_sysctl = "busybox sysctl";
+			}
 			root = Runtime.getRuntime().exec(rootCommand);
 			exec = new PrintStream(root.getOutputStream());
 			// stderr = root.getErrorStream();
-		}
-	}
-
-	void releaseRoot() {
-		if (root != null) {
-			exec.println("exit");
-			exec.flush();
-			exec.close();
-			try {
-				root.waitFor();
-			} catch (InterruptedException ignore) {
-			}
-			exec = null;
-			root = null;
 		}
 	}
 
@@ -279,173 +389,35 @@ class Kernel {
 		stderr = root.getErrorStream();
 	}*/
 
+	void releaseRoot() {
+		if (root != null) {
+			exec.println("exit");
+			exec.flush();
+			exec.close();
+			try {
+				root.waitFor();
+			} catch (InterruptedException ignore) {
+			}
+			exec = null;
+			root = null;
+		}
+	}
+
 	int getSocRawID() {
 		return raw_id;
 	}
 
-	private Kernel() throws IOException {
-		raw_id = -1;
-		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
-		for (String node : raw_id_nodes) {
-			try {
-				if (!hasNode(node)) continue;
-				grantRead(node);
-				raw_id = Integer.parseInt(readNode(node));
-				break;
-			} catch (Throwable ignore) {
-			}
-		}
-		try {
-			if (raw_id == 2375) { // Xiaomi Mi 5
-				batteryTemp = new AdaptiveTempReader(this, getThermalZone(22));
-			} else {
-				batteryTemp = new AdaptiveTempReader(this, "/sys/class/power_supply/battery/temp");
-			}
-		} catch (Throwable ignore) {
-		}
-
-		if (raw_id == 1972 || raw_id == 1973 || raw_id == 1974) { // Xiaomi Mi 3/4/Note
-			try {
-				socTemp = new AdaptiveTempReader(this, getThermalZone(0));
-			} catch (Throwable ignore) {
-			}
-			try {
-				gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
-			} catch (Throwable ignore) {
-			}
-		} else if (raw_id == 1812) { // Xiaomi Mi 2/2S
-			try {
-				socTemp = new AdaptiveTempReader(this, getThermalZone(0));
-			} catch (Throwable ignore) {
-			}
-			try {
-				gpuTemp = new AdaptiveTempReader(this, getThermalZone(2));
-			} catch (Throwable ignore) {
-			}
-		} else if (raw_id == 94) { // ONEPLUS A5000
-			try {
-				socTemp = new AdaptiveTempReader(this, getThermalZone(1));
-			} catch (Throwable ignore) {
-			}
-			try {
-				gpuTemp = new AdaptiveTempReader(this, getThermalZone(20));
-			} catch (Throwable ignore) {
-			}
-		} else if (raw_id == 95) { // ONEPLUS A3010
-			try {
-				socTemp = new AdaptiveTempReader(this, getThermalZone(22));
-			} catch (Throwable ignore) {
-			}
-			try {
-				gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
-			} catch (Throwable ignore) {
-			}
-		} else if (raw_id == 2375) { // Xiaomi Mi 5
-			try {
-				socTemp = new AdaptiveTempReader(this, getThermalZone(1));
-			} catch (Throwable ignore) {
-			}
-			try {
-				gpuTemp = new AdaptiveTempReader(this, getThermalZone(16));
-			} catch (Throwable ignore) {
-			}
-		}
-
-		// 获取多簇处理器的配置路径
-		/*if (hasNode(cpufreqPath + "/policy0")) {
-			policyMap = new SparseArray<>();
-			clusterMap = new SparseIntArray();
-			try {
-				File cpufreq = new File(cpufreqPath);
-				String[] files = cpufreq.list(new FilenameFilter() {
-					@Override
-					public boolean accept(File dir, String name) {
-						return name.startsWith("policy");
-					}
-				});
-				for (String f : files) {
-					String path = cpufreqPath + "/" + f;
-					Scanner sc = new Scanner(new File(path + "/affected_cpus"));
-					int firstId = -1, cpuCount = 0;
-					while (sc.hasNextInt()) {
-						int cpuId = sc.nextInt();
-						if (firstId == -1) firstId = cpuId;
-						clusterMap.put(cpuId, cluster);
-						policyMap.put(cpuId, path);
-						cpuCount++;
-					}
-					clusterPolicies.add(new ClusterPolicy(firstId, cpuCount, path));
-					cluster++;
-				}
-			} catch (Throwable e) {
-				Log.w("Dynatweak", "cluster policy detect error", e);
-				clusterMap = null;
-			}
-		}*/
-
-		clusterPolicies = new ArrayList<>();
-		final String cpuPath = "/sys/devices/system/cpu";
-		int cpuId = 0;
-		cpuCores = new ArrayList<>();
-		while (new File(cpuPath + "/cpu" + cpuId).exists()) {
-			try {
-				CpuCore cpu;
-				if (raw_id == 1972 || raw_id == 1973 || raw_id == 1974) { // Xiaomi Mi 3/4/Note
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-							getThermalZone(cpuId + 5));
-				} else if (raw_id == 94) { // ONEPLUS A5000
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-							getThermalZone(cpuId + 11));
-				} else if (raw_id == 95) { // ONEPLUS A3010
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-							getThermalZone(cpuId + 5));
-				} else if (raw_id == 2375) { // Xiaomi Mi 5
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-							getThermalZone(cpuId + 9));
-				} else if (raw_id == 1812) { // Xiaomi Mi 2/2S
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-							getThermalZone(cpuId + 7));
-				} else {
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-							null);
-				}
-				cpuCores.add(cpu);
-			} catch (Throwable ignore) {
-			}
-			cpuId++;
-		}
-
-		int cluster = 0;
-		for (CpuCore cpu : cpuCores) {
-			boolean exist = false;
-			for (ClusterPolicy clusterPolicy : clusterPolicies) {
-				for (int affectedCpu : clusterPolicy.AffectedCpu) {
-					if (cpu.getId() == affectedCpu) {
-						exist = true;
-						break;
-					}
-				}
-				if (exist) break;
-			}
-			if (exist) continue;
-			try {
-				String policy = cpu.getPath() + "/cpufreq";
-				String[] raw = readNode(policy + "/affected_cpus").split(" ");
-				int[] affected_cpus = new int[raw.length];
-				int i = 0;
-				for (String raw_id : raw) {
-					int id = Integer.parseInt(raw_id);
-					cpuCores.get(id).setCluster(cluster);
-					affected_cpus[i++] = id;
-				}
-				clusterPolicies.add(new ClusterPolicy(cpu.getId(), affected_cpus, policy));
-				cluster++;
-			} catch (Throwable ignore) {
-			}
-		}
-	}
-
 	class ClusterPolicy {
+		private int StartCpu;
+		private int[] AffectedCpu;
+		private String PolicyPath;
+
+		ClusterPolicy(int startCpu, int[] cpu, String path) {
+			StartCpu = startCpu;
+			AffectedCpu = cpu;
+			PolicyPath = path;
+		}
+
 		int getStartCpu() {
 			return StartCpu;
 		}
@@ -457,23 +429,13 @@ class Kernel {
 		int getCpuCount() {
 			return AffectedCpu.length;
 		}
-
-		private int StartCpu;
-		private int[] AffectedCpu;
-		private String PolicyPath;
-
-		ClusterPolicy(int startCpu, int[] cpu, String path) {
-			StartCpu = startCpu;
-			AffectedCpu = cpu;
-			PolicyPath = path;
-		}
 	}
 
 	class CpuCore {
+		AdaptiveTempReader tempNode = null;
 		private List<Integer> scaling_available_frequencies = null;
 		private int id, cluster;
 		private String path;
-		AdaptiveTempReader tempNode = null;
 
 		CpuCore(int id, String path, String tempNode) {
 			if (tempNode != null) {
@@ -485,10 +447,10 @@ class Kernel {
 			}
 			this.path = path + "/cpu" + id;
 			this.id = id;
-			grantAllPermissions();
+			grantRequiredPermissions();
 		}
 
-		void grantAllPermissions() {
+		void grantRequiredPermissions() {
 			changeMode(this.path + "/online", "0644");
 			changeMode(this.path + "/cpufreq/scaling_max_freq", "0644");
 			changeMode(this.path + "/cpufreq/scaling_min_freq", "0644");
@@ -668,17 +630,6 @@ class AdaptiveTempReader {
 			throw new FileNotFoundException();
 		}
 	}
-
-	/*AdaptiveTempReader(String node) throws FileNotFoundException {
-		try {
-			fr = new RandomAccessFile(node, "r");
-			divider = 1.0;
-			read();
-		} catch (Throwable e) {
-			Log.w("Dynatweak", "AdaptiveTempReader node=" + node, e);
-			throw new FileNotFoundException();
-		}
-	}*/
 
 	double read() throws IOException {
 		fr.seek(0);

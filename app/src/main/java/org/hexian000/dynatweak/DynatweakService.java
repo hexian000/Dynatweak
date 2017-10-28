@@ -34,16 +34,16 @@ public class DynatweakService extends Service {
 	private boolean visible = false;
 	private int[] thermal_last_limits = null;
 	private Kernel k;
+	private Handler handler = new Handler();
+	private Timer timer = null;
+	private WindowManager windowManager = null;
+	private MonitorOverlay monitorOverlay = null;
+	private BroadcastReceiver eventListener = null;
+	private DeviceInfo deviceInfo = null;
 
 	void showMonitor() {
 		if (!visible) {
 			try {
-			    /*int status = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED)).getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-				boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-						status == BatteryManager.BATTERY_STATUS_FULL;
-				if (!chargingOnly || isCharging) {
-					createOverlay(this);
-				}*/
 				createOverlay(this);
 			} catch (WindowManager.BadTokenException e) {
 				windowManager = null;
@@ -88,13 +88,6 @@ public class DynatweakService extends Service {
 			}
 		}
 	}
-
-	private Handler handler = new Handler();
-	private Timer timer = null;
-	private WindowManager windowManager = null;
-	private MonitorOverlay monitorOverlay = null;
-	private BroadcastReceiver eventListener = null;
-	private DeviceInfo deviceInfo = null;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -202,6 +195,49 @@ public class DynatweakService extends Service {
 		}
 	}*/
 
+	private void updateOverlay() {
+		if (monitorOverlay != null) {
+			TextView textView = (TextView) monitorOverlay.findViewById(R.id.textView);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				textView.setText(Html.fromHtml(deviceInfo.getHtml(), Html.FROM_HTML_MODE_COMPACT));
+			} else {
+				//noinspection deprecation
+				textView.setText(Html.fromHtml(deviceInfo.getHtml()));
+			}
+		}
+	}
+
+	private void createOverlay(Context context) throws WindowManager.BadTokenException {
+		Point screenSize = new Point();
+		windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+		windowManager.getDefaultDisplay().getSize(screenSize);
+
+		monitorOverlay = new MonitorOverlay(context);
+
+		WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+		layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+		layoutParams.format = PixelFormat.RGBA_8888;
+		layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+				| WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+		layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+		layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+		layoutParams.gravity = Gravity.END | Gravity.TOP;
+		layoutParams.x = 0;
+		layoutParams.y = 0;
+
+		windowManager.addView(monitorOverlay, layoutParams);
+		visible = true;
+	}
+
+	private void removeOverlay() {
+		visible = false;
+		if (monitorOverlay != null) {
+			windowManager.removeView(monitorOverlay);
+			windowManager = null;
+			monitorOverlay = null;
+		}
+	}
+
 	class RefreshTask extends TimerTask {
 
 		@Override
@@ -251,48 +287,5 @@ public class DynatweakService extends Service {
 			});
 		}
 
-	}
-
-	private void updateOverlay() {
-		if (monitorOverlay != null) {
-			TextView textView = (TextView) monitorOverlay.findViewById(R.id.textView);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-				textView.setText(Html.fromHtml(deviceInfo.getHtml(), Html.FROM_HTML_MODE_COMPACT));
-			} else {
-				//noinspection deprecation
-				textView.setText(Html.fromHtml(deviceInfo.getHtml()));
-			}
-		}
-	}
-
-	private void createOverlay(Context context) throws WindowManager.BadTokenException {
-		Point screenSize = new Point();
-		windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-		windowManager.getDefaultDisplay().getSize(screenSize);
-
-		monitorOverlay = new MonitorOverlay(context);
-
-		WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-		layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
-		layoutParams.format = PixelFormat.RGBA_8888;
-		layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-				| WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-		layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-		layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-		layoutParams.gravity = Gravity.END | Gravity.TOP;
-		layoutParams.x = 0;
-		layoutParams.y = 0;
-
-		windowManager.addView(monitorOverlay, layoutParams);
-		visible = true;
-	}
-
-	private void removeOverlay() {
-		visible = false;
-		if (monitorOverlay != null) {
-			windowManager.removeView(monitorOverlay);
-			windowManager = null;
-			monitorOverlay = null;
-		}
 	}
 }
