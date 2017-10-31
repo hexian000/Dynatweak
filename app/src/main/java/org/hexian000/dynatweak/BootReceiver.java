@@ -144,7 +144,7 @@ public class BootReceiver extends BroadcastReceiver {
                             final String[] preferList = {"zzmoove"};
                             governor.add(preferGovernor(allGovernors, preferList));
                         } else {
-                            final String[] preferList = {"powersave"};
+                            final String[] preferList = {"zzmoove"};
                             governor.add(preferGovernor(allGovernors, preferList));
                         }
                         profiles.add(PROFILE_POWERSAVE);
@@ -261,10 +261,10 @@ public class BootReceiver extends BroadcastReceiver {
             case PROFILE_DISABLED:
                 break;
             case PROFILE_POWERSAVE:
-                k.setSysctl("kernel.sched_downmigrate", "20");
+                k.setSysctl("kernel.sched_downmigrate", "50");
                 k.setSysctl("kernel.sched_upmigrate", "99");
-                k.setSysctl("kernel.sched_spill_nr_run", "2");
-                k.setSysctl("kernel.sched_spill_load", "85");
+                k.setSysctl("kernel.sched_spill_nr_run", "1");
+                k.setSysctl("kernel.sched_spill_load", "50");
                 break;
             case PROFILE_BANLANCED:
                 k.setSysctl("kernel.sched_downmigrate", "70");
@@ -409,7 +409,7 @@ public class BootReceiver extends BroadcastReceiver {
                 k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
                 break;
             case HOTPLUG_DRIVER: // use hotplug driver
-                final String[][] s = {{"/sys/kernel/alucard_hotplug/hotplug_enable", "1"},
+                final String[][] driverNodes = {{"/sys/kernel/alucard_hotplug/hotplug_enable", "1"},
                         {"/sys/module/msm_hotplug/msm_enabled", "1"},
                         {"/sys/module/blu_plug/parameters/enabled", "1"},
                         {"/sys/module/autosmp/parameters/enabled", "Y"},
@@ -417,7 +417,7 @@ public class BootReceiver extends BroadcastReceiver {
                         {"/proc/hps/enabled", "1"}
                 };
                 boolean success = false;
-                for (String[] param : s) {
+                for (String[] param : driverNodes) {
                     success = k.trySetNode(param[0], param[1]);
                     if (success)
                         break;
