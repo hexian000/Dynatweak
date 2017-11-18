@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
 				return;
 			}
 		} catch (Throwable e) {
-			Log.d("Dynatweak", "Unsupported", e);
+			Log.d(Kernel.LOG_TAG, "Unsupported", e);
 			Toast.makeText(this, R.string.kernel_unsupported, Toast.LENGTH_SHORT).show();
 			finish();
 			return;
@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
 					BootReceiver.tweak(hotplug_profile, profile);
 					msg.what = 0;
 				} catch (Throwable e) {
-					Log.e("Dynatweak", "MainActivity.applySettings()", e);
+					Log.e(Kernel.LOG_TAG, "MainActivity.applySettings()", e);
 					msg.what = 1;
 				}
 				handler.sendMessage(msg);
