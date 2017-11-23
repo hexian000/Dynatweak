@@ -9,7 +9,7 @@
         <item>节能（GPU最大节能）</item>
         <item>平衡（日常使用推荐）</item>
         <item>高性能（GPU平衡）</item>
-        <item>游戏（GPU最高性能）</item>
+        <item>全开（GPU最高性能）</item>
     </string-array>
     <string-array name="hotplug_profile">
         <item>全核心在线</item>
