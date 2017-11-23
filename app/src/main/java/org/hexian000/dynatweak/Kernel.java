@@ -261,7 +261,7 @@ class Kernel {
 		changeMode(path, "a+r");
 	}
 
-	void changeMode(String path, String permission) {
+	private void changeMode(String path, String permission) {
 		try {
 			runAsRoot(COMMAND_chmod + " " + permission + " \'" + path + "\'");
 		} catch (IOException e) {
@@ -273,13 +273,13 @@ class Kernel {
 		return new BufferedReader(new FileReader(path)).readLine();
 	}
 
-	void setNode(String path, String value) throws IOException {
+	private void setNode(String path, String value) throws IOException {
 		if (hasNode(path)) {
 			runAsRoot("echo '" + value + "'>'" + path + "'\n");
 		}
 	}
 
-	void setNode(String path, String value, boolean lock) throws IOException {
+	private void setNode(String path, String value, boolean lock) throws IOException {
 		if (hasNode(path)) {
 			if (lock) {
 				changeMode(path, "a+w");
@@ -293,20 +293,27 @@ class Kernel {
 		}
 	}
 
+	private boolean trySetNodeInternal(String node, String value) {
+		try {
+			setNode(node, value);
+			if (readNode(node).equals(value))
+				return true;
+			else
+				Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + value);
+		} catch (IOException e) {
+			Log.w(LOG_TAG, "trySetNode failed: " + node, e);
+		}
+		return false;
+	}
+
 	boolean trySetNode(String node, String value) {
 		if (hasNode(node)) {
-			try {
-				setNode(node, value);
-				if (readNode(node).equals(value))
+			for (int i = 0; i < 3; i++) {
+				if (trySetNodeInternal(node, value)) {
 					return true;
-				else
-					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + value);
-			} catch (IOException e) {
-				Log.w(LOG_TAG, "trySetNode failed: " + node + " = " + value, e);
-				return false;
+				}
 			}
-		} else {
-			Log.d(LOG_TAG, "node ignored: " + node + " = " + value);
+			Log.w(LOG_TAG, "trySetNode failed for many times, ignoring " + node);
 		}
 		return false;
 	}
@@ -524,16 +531,20 @@ class Kernel {
 		}*/
 
 		void setScalingMaxFrequency(int frequency, boolean locked) throws IOException {
-			setNode(path + "/cpufreq/scaling_max_freq", frequency + "", locked);
+			if (locked) {
+				setNode(path + "/cpufreq/scaling_max_freq", frequency + "", true);
+			} else {
+				trySetNode(path + "/cpufreq/scaling_max_freq", frequency + "");
+			}
 		}
 
 		/*int getScalingMinFrequency() throws IOException {
-            String ret = readNode(path + "/cpufreq/scaling_min_freq");
+		    String ret = readNode(path + "/cpufreq/scaling_min_freq");
 			return Integer.parseInt(ret);
 		}*/
 
-		void setScalingMinFrequency(int frequency, boolean locked) throws IOException {
-			setNode(path + "/cpufreq/scaling_min_freq", frequency + "", locked);
+		void setScalingMinFrequency(int frequency) throws IOException {
+			trySetNode(path + "/cpufreq/scaling_min_freq", frequency + "");
 		}
 
 		int getScalingCurrentFrequency() throws IOException {
@@ -552,12 +563,12 @@ class Kernel {
 		}
 
 		/*int getCurrentFrequency() throws IOException {
-            String ret = readNode(path + "/cpufreq/cpuinfo_cur_freq");
+		    String ret = readNode(path + "/cpufreq/cpuinfo_cur_freq");
 			return Integer.parseInt(ret);
 		}*/
 
-		void setGovernor(String governor, boolean locked) throws IOException {
-			setNode(path + "/cpufreq/scaling_governor", governor, locked);
+		void trySetGovernor(String governor) {
+			trySetNode(path + "/cpufreq/scaling_governor", governor);
 		}
 
 		boolean isOnline() {
@@ -570,22 +581,6 @@ class Kernel {
 			}
 			return ret;
 		}
-
-		/*void setOnline(boolean online) {
-            if (online) {
-				for (int putOnline = 0; putOnline < 10; putOnline++) {
-					setNode(path + "/online", "1");
-					if (!isOnline()) {
-						try {
-							Thread.sleep(5);
-						} catch (InterruptedException e) {
-							throw new RuntimeException(e);
-						}
-					} else break;
-				}
-			} else
-				setNode(path + "/online", "0");
-		}*/
 
 		void setOnline(boolean online, boolean locked) throws IOException {
 			if (online)

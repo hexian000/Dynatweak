@@ -35,12 +35,12 @@ public class BootReceiver extends BroadcastReceiver {
 			Thread.sleep(1000);
 		} catch (InterruptedException ignore) {
 		}
-		k.setNode("/proc/hps/enabled", "0");
-		k.setNode("/sys/module/blu_plug/parameters/enabled", "0");
-		k.setNode("/sys/module/autosmp/parameters/enabled", "N");
-		k.setNode("/sys/kernel/alucard_hotplug/hotplug_enable", "0");
-		k.setNode("/sys/kernel/msm_mpdecision/conf/enabled", "0");
-		k.setNode("/sys/module/msm_hotplug/msm_enabled", "0");
+		k.trySetNode("/proc/hps/enabled", "0");
+		k.trySetNode("/sys/module/blu_plug/parameters/enabled", "0");
+		k.trySetNode("/sys/module/autosmp/parameters/enabled", "N");
+		k.trySetNode("/sys/kernel/alucard_hotplug/hotplug_enable", "0");
+		k.trySetNode("/sys/kernel/msm_mpdecision/conf/enabled", "0");
+		k.trySetNode("/sys/module/msm_hotplug/msm_enabled", "0");
 
 		// Entropy
 		k.setSysctl("kernel.random.read_wakeup_threshold", "128");
@@ -51,29 +51,30 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setSysctl("vm.dirty_writeback_centisecs", "1000");
 
 		// Misc
-		k.setNode("/sys/kernel/fast_charge/force_fast_charge", "1");
-		k.setNode("/sys/kernel/sched/arch_power", "1");
-		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
+		k.trySetNode("/sys/kernel/fast_charge/force_fast_charge", "1");
+		k.trySetNode("/sys/kernel/sched/arch_power", "1");
+		k.trySetNode("/sys/module/workqueue/parameters/power_efficent", "Y");
 
 		// Thermal
-		k.setNode("/sys/module/msm_thermal/parameters/enabled", "N");
+		k.trySetNode("/sys/module/msm_thermal/parameters/enabled", "N");
 		if (k.hasCoreControl())
 			k.setCoreControlMask(0);
 
 		// IO
 		List<String> block = k.listBlockDevices();
 		for (String i : block) {
+			Log.i(Kernel.LOG_TAG, "block device: " + i + " detected");
 			if (k.hasNode(i + "/queue/iostats") &&
 					k.hasNode(i + "/queue/add_random") &&
 					k.hasNode(i + "/queue/read_ahead_kb") &&
 					k.hasNode(i + "/queue/rq_affinity") &&
 					k.hasNode(i + "/queue/scheduler") &&
 					k.hasNode(i + "/queue/rotational")) {
-				k.setNode(i + "/queue/iostats", "0");
-				k.setNode(i + "/queue/add_random", "0");
-				k.setNode(i + "/queue/read_ahead_kb", "512");
-				k.setNode(i + "/queue/rq_affinity", "1");
-				k.setNode(i + "/queue/rotational", "0");
+				k.trySetNode(i + "/queue/iostats", "0");
+				k.trySetNode(i + "/queue/add_random", "0");
+				k.trySetNode(i + "/queue/read_ahead_kb", "512");
+				k.trySetNode(i + "/queue/rq_affinity", "1");
+				k.trySetNode(i + "/queue/rotational", "0");
 				List<String> schedulers = k.listBlockAvailableScheduler(i + "/queue/scheduler");
 				String scheduler = null;
 				if (schedulers.contains("maple"))
@@ -95,7 +96,7 @@ public class BootReceiver extends BroadcastReceiver {
 				else if (schedulers.contains("noop"))
 					scheduler = "noop";
 				if (scheduler != null) {
-					k.setNode(i + "/queue/scheduler", scheduler);
+					k.trySetNode(i + "/queue/scheduler", scheduler);
 				}
 			}
 		}
@@ -182,11 +183,11 @@ public class BootReceiver extends BroadcastReceiver {
 			for (int trial = 0; trial < 3; trial++) {
 				try {
 					cpu.setOnline(true, false);
-					cpu.setScalingMinFrequency(cpu.getMinFrequency(), false);
+					cpu.setScalingMinFrequency(cpu.getMinFrequency());
 					cpu.setScalingMaxFrequency(cpu.getMaxFrequency(), false);
 					// Per cpu governor tweak
 					if (profile != PROFILE_DISABLED) {
-						cpu.setGovernor(governor.get(cpu.getCluster()), false);
+						cpu.trySetGovernor(governor.get(cpu.getCluster()));
 						Log.d(Kernel.LOG_TAG, "tweaking cpu " + cpu.getId() +
 								": governor=" + governor.get(cpu.getCluster()) +
 								", profile=" + profiles.get(cpu.getCluster()) +
@@ -211,29 +212,29 @@ public class BootReceiver extends BroadcastReceiver {
 			// Qualcomm core control
 			if (k.hasNode(cpu.getPath() + "/core_ctl")) {
 				Log.i(Kernel.LOG_TAG, "core_ctl detected");
-				k.setNode(cpu.getPath() + "/core_ctl/max_cpus", clusterPolicy.getCpuCount() + "");
-				k.setNode(cpu.getPath() + "/core_ctl/offline_delay_ms", "100");
+				k.trySetNode(cpu.getPath() + "/core_ctl/max_cpus", clusterPolicy.getCpuCount() + "");
+				k.trySetNode(cpu.getPath() + "/core_ctl/offline_delay_ms", "100");
 				if (!k.readNode(cpu.getPath() + "/core_ctl/is_big_cluster").equals("0")) {
 					switch (profile) {
 						case PROFILE_POWERSAVE:
-							k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres", "40");
-							k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres", "90");
-							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "40");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "90");
+							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
 						case PROFILE_BANLANCED:
-							k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres", "40");
-							k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres", "60");
-							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "40");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "60");
+							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
 						case PROFILE_PERFORMANCE:
-							k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres", "30");
-							k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres", "60");
-							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "30");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "60");
+							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
 							break;
 						case PROFILE_GAMING:
-							k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres", "0");
-							k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres", "0");
-							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
 							break;
 					}
 				} else {
@@ -241,16 +242,16 @@ public class BootReceiver extends BroadcastReceiver {
 						case PROFILE_DISABLED:
 							break;
 						case PROFILE_POWERSAVE:
-							k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres", "10");
-							k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres", "30");
-							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "10");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "30");
+							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
 							break;
 						case PROFILE_BANLANCED:
 						case PROFILE_PERFORMANCE:
 						case PROFILE_GAMING:
-							k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres", "0");
-							k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres", "0");
-							k.setNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
 							break;
 					}
 				}
@@ -299,14 +300,10 @@ public class BootReceiver extends BroadcastReceiver {
 			final String msm_performance = "/sys/module/msm_performance/parameters/";
 			StringBuilder cpu_max_freq = new StringBuilder();
 			StringBuilder cpu_min_freq = new StringBuilder();
-			for (int i = 0; i < k.cpuCores.size(); i++) {
-				cpu_max_freq.append(i).append(':').append("4294967295").append(' ');
-				cpu_min_freq.append(i).append(':').append("0").append(' ');
-			}
-			/*for (Kernel.CpuCore cpu : k.cpuCores) {
+			for (Kernel.CpuCore cpu : k.cpuCores) {
 				cpu_max_freq.append(cpu.getId()).append(':').append(cpu.getMaxFrequency()).append(' ');
 				cpu_min_freq.append(cpu.getId()).append(':').append(cpu.getMinFrequency()).append(' ');
-			}*/
+			}
 			k.trySetNode(msm_performance + "cpu_max_freq", cpu_max_freq.toString());
 			k.trySetNode(msm_performance + "cpu_min_freq", cpu_min_freq.toString());
 			k.trySetNode(msm_performance + "touchboost", "0");
@@ -314,8 +311,8 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// CPU Boost
-		k.setNode("/sys/module/cpu_boost/parameters/boost_ms", "40");
-		k.setNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
+		k.trySetNode("/sys/module/cpu_boost/parameters/boost_ms", "40");
+		k.trySetNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
 		for (Kernel.CpuCore cpu : k.cpuCores) {
 			String boostFreq, boostFreq_s2;
 			if (multiCluster) {
@@ -335,11 +332,11 @@ public class BootReceiver extends BroadcastReceiver {
 					boostFreq_s2 = cpu.getId() + ":0";
 				}
 			}
-			k.setNode("/sys/module/cpu_boost/parameters/input_boost_freq", boostFreq);
-			k.setNode("/sys/module/cpu_boost/parameters/input_boost_freq_s2", boostFreq_s2);
+			k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_freq", boostFreq);
+			k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_freq_s2", boostFreq_s2);
 		}
-		k.setNode("/sys/module/cpu_boost/parameters/input_boost_ms", "80");
-		k.setNode("/sys/module/cpu_boost/parameters/input_boost_ms_s2", "160");
+		k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_ms", "80");
+		k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_ms_s2", "160");
 
 		// GPU
 		final String gpuNodeRoot = "/sys/class/kgsl/kgsl-3d0";
@@ -358,32 +355,32 @@ public class BootReceiver extends BroadcastReceiver {
 			case PROFILE_POWERSAVE: // maximize battery life
 				if (num_pwrlevels != null) {
 					try {
-						k.setNode(gpuNodeRoot + "/max_pwrlevel", (num_pwrlevels - 1) + "");
-						k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
+						k.trySetNode(gpuNodeRoot + "/max_pwrlevel", (num_pwrlevels - 1) + "");
+						k.trySetNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
 					} catch (Throwable ignore) {
 					}
 				}
 				break;
 			case PROFILE_BANLANCED: // governor controlled with idler
 				// Adreno Idler
-				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "Y");
-				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_downdifferential", "40");
-				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_idleworkload", "8000");
-				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_idlewait", "50");
+				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "Y");
+				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_downdifferential", "40");
+				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_idleworkload", "8000");
+				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_idlewait", "50");
 				if (num_pwrlevels != null) {
 					try {
-						k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
-						k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
+						k.trySetNode(gpuNodeRoot + "/max_pwrlevel", "0");
+						k.trySetNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
 					} catch (Throwable ignore) {
 					}
 				}
 				break;
 			case PROFILE_PERFORMANCE: // governor controlled without idler
-				k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "N");
+				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "N");
 				if (num_pwrlevels != null) {
 					try {
-						k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
-						k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
+						k.trySetNode(gpuNodeRoot + "/max_pwrlevel", "0");
+						k.trySetNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
 					} catch (Throwable ignore) {
 					}
 				}
@@ -391,8 +388,8 @@ public class BootReceiver extends BroadcastReceiver {
 			case PROFILE_GAMING: // maximize performance
 				if (num_pwrlevels != null) {
 					try {
-						k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
-						k.setNode(gpuNodeRoot + "/min_pwrlevel", "0");
+						k.trySetNode(gpuNodeRoot + "/max_pwrlevel", "0");
+						k.trySetNode(gpuNodeRoot + "/min_pwrlevel", "0");
 					} catch (Throwable ignore) {
 					}
 				}
@@ -402,7 +399,7 @@ public class BootReceiver extends BroadcastReceiver {
 		// hotplug
 		switch (hotplug) {
 			case HOTPLUG_ALLCORES: // all cores
-				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
+				k.trySetNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 				break;
 			case HOTPLUG_LITTLECORES: // little cluster or dual-core
 				if (multiCluster) {
@@ -433,7 +430,7 @@ public class BootReceiver extends BroadcastReceiver {
 						}
 					}
 				}
-				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
+				k.trySetNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
 				break;
 			case HOTPLUG_DRIVER: // use hotplug driver
 				final String[][] driverNodes = {{"/sys/kernel/alucard_hotplug/hotplug_enable", "1"},
@@ -451,7 +448,7 @@ public class BootReceiver extends BroadcastReceiver {
 				}
 				if (!success)
 					k.runAsRoot("start mpdecision");
-				k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "2");
+				k.trySetNode("/sys/devices/system/cpu/sched_mc_power_savings", "2");
 				break;
 		}
 
