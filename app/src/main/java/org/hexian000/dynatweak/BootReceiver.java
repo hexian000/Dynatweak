@@ -479,7 +479,7 @@ public class BootReceiver extends BroadcastReceiver {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < core; i++) {
 			sb.append(value);
-			if (i != core - 1) sb.append(' ');
+			sb.append(' ');
 		}
 		return sb.toString();
 	}
