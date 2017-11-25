@@ -293,27 +293,17 @@ class Kernel {
 		}
 	}
 
-	private boolean trySetNodeInternal(String node, String value) {
-		try {
-			setNode(node, value);
-			if (readNode(node).equals(value))
-				return true;
-			else
-				Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + value);
-		} catch (IOException e) {
-			Log.w(LOG_TAG, "trySetNode failed: " + node, e);
-		}
-		return false;
-	}
-
 	boolean trySetNode(String node, String value) {
 		if (hasNode(node)) {
-			for (int i = 0; i < 3; i++) {
-				if (trySetNodeInternal(node, value)) {
+			try {
+				setNode(node, value);
+				if (readNode(node).equals(value))
 					return true;
-				}
+				else
+					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + value);
+			} catch (Throwable e) {
+				Log.w(LOG_TAG, "trySetNode failed: " + node, e);
 			}
-			Log.w(LOG_TAG, "trySetNode failed for many times, ignoring " + node);
 		}
 		return false;
 	}
