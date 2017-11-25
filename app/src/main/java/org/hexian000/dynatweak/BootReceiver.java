@@ -16,9 +16,9 @@ import java.util.List;
  */
 public class BootReceiver extends BroadcastReceiver {
 
+	static final int PROFILE_BANLANCED = 2;
 	private static final int PROFILE_DISABLED = 0;
 	private static final int PROFILE_POWERSAVE = 1;
-	private static final int PROFILE_BANLANCED = 2;
 	private static final int PROFILE_PERFORMANCE = 3;
 	private static final int PROFILE_GAMING = 4;
 	private static final int HOTPLUG_ALLCORES = 0;
@@ -211,46 +211,58 @@ public class BootReceiver extends BroadcastReceiver {
 			Kernel.CpuCore cpu = k.cpuCores.get(clusterPolicy.getStartCpu());
 			// Qualcomm core control
 			if (k.hasNode(cpu.getPath() + "/core_ctl")) {
-				Log.i(Kernel.LOG_TAG, "core_ctl detected");
+				Log.i(Kernel.LOG_TAG, "policy" + i + ": core_ctl detected");
 				k.trySetNode(cpu.getPath() + "/core_ctl/max_cpus", clusterPolicy.getCpuCount() + "");
 				k.trySetNode(cpu.getPath() + "/core_ctl/offline_delay_ms", "100");
 				if (!k.readNode(cpu.getPath() + "/core_ctl/is_big_cluster").equals("0")) {
-					switch (profile) {
+					switch (profile) { // big cluster
 						case PROFILE_POWERSAVE:
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "40");
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "90");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
+									setAllCoresTheSame("40", clusterPolicy.getCpuCount()));
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
+									setAllCoresTheSame("90", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
 						case PROFILE_BANLANCED:
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "40");
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "60");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
+									setAllCoresTheSame("40", clusterPolicy.getCpuCount()));
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
+									setAllCoresTheSame("60", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
 						case PROFILE_PERFORMANCE:
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "30");
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "60");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
+									setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
+									setAllCoresTheSame("60", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
 							break;
 						case PROFILE_GAMING:
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "0");
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
+									setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
+									setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
 							break;
 					}
-				} else {
+				} else { // little cluster
 					switch (profile) {
 						case PROFILE_DISABLED:
 							break;
 						case PROFILE_POWERSAVE:
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "10");
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "30");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
+									setAllCoresTheSame("10", clusterPolicy.getCpuCount()));
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
+									setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
 							break;
 						case PROFILE_BANLANCED:
 						case PROFILE_PERFORMANCE:
 						case PROFILE_GAMING:
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres", "0");
-							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres", "0");
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
+									setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
+							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
+									setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
 							break;
 					}
@@ -461,6 +473,15 @@ public class BootReceiver extends BroadcastReceiver {
 				return name;
 		}
 		return "interactive";
+	}
+
+	private static String setAllCoresTheSame(String value, int core) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < core; i++) {
+			sb.append(value);
+			if (i != core - 1) sb.append(' ');
+		}
+		return sb.toString();
 	}
 
 	private static void tweakGovernor(Kernel k, Kernel.CpuCore cpu, String policy, String governor, int profile) throws IOException {

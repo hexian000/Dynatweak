@@ -118,12 +118,12 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
-				properties.setProperty("interactive_profile", "1");
+				properties.setProperty("interactive_profile", BootReceiver.PROFILE_BANLANCED + "");
 				applySettings();
 				saveProperties(MainActivity.this);
 			}
 		});
-		spinnerProfile.setSelection(Integer.parseInt(properties.getProperty("interactive_profile", "1")));
+		spinnerProfile.setSelection(Integer.parseInt(properties.getProperty("interactive_profile", BootReceiver.PROFILE_BANLANCED + "")));
 
 		spinnerHotplug.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			boolean first = true;
