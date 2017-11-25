@@ -499,7 +499,6 @@ public class BootReceiver extends BroadcastReceiver {
 						k.trySetNode(policy + "/interactive/timer_slack", "40000");
 						k.trySetNode(policy + "/interactive/min_sample_time", "80000");
 						k.trySetNode(policy + "/interactive/boostpulse_duration", "80000");
-						k.trySetNode(policy + "/interactive/boostpulse", "1");
 						k.trySetNode(policy + "/interactive/use_migration_notif", "1");
 						k.trySetNode(policy + "/interactive/ignore_hispeed_on_notif", "1");
 						k.trySetNode(policy + "/interactive/max_freq_hysteresis", "80000");
@@ -662,7 +661,6 @@ public class BootReceiver extends BroadcastReceiver {
 						k.trySetNode(policy + "/interactive/timer_slack", "20000");
 						k.trySetNode(policy + "/interactive/min_sample_time", "80000");
 						k.trySetNode(policy + "/interactive/boostpulse_duration", "80000");
-						k.trySetNode(policy + "/interactive/boostpulse", "1");
 						k.trySetNode(policy + "/interactive/use_migration_notif", "1");
 						k.trySetNode(policy + "/interactive/ignore_hispeed_on_notif", "1");
 						k.trySetNode(policy + "/interactive/max_freq_hysteresis", "80000");
@@ -822,7 +820,6 @@ public class BootReceiver extends BroadcastReceiver {
 						k.trySetNode(policy + "/interactive/timer_slack", "20000");
 						k.trySetNode(policy + "/interactive/min_sample_time", "80000");
 						k.trySetNode(policy + "/interactive/boostpulse_duration", "80000");
-						k.trySetNode(policy + "/interactive/boostpulse", "1");
 						k.trySetNode(policy + "/interactive/use_migration_notif", "1");
 						k.trySetNode(policy + "/interactive/ignore_hispeed_on_notif", "1");
 						k.trySetNode(policy + "/interactive/max_freq_hysteresis", "40000");
@@ -990,7 +987,6 @@ public class BootReceiver extends BroadcastReceiver {
 						k.trySetNode(policy + "/interactive/timer_slack", "20000");
 						k.trySetNode(policy + "/interactive/min_sample_time", "80000");
 						k.trySetNode(policy + "/interactive/boostpulse_duration", "80000");
-						k.trySetNode(policy + "/interactive/boostpulse", "1");
 						break;
 					case "blu_active":
 						k.trySetNode(policy + "/blu_active/above_hispeed_delay",
