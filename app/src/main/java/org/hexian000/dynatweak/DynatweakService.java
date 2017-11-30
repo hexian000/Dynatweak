@@ -153,7 +153,7 @@ public class DynatweakService extends Service {
 			k = Kernel.getInstance();
 			deviceInfo = new DeviceInfo(k);
 		} catch (IOException e) {
-			Log.e("Dynatweak", "Service create", e);
+			Log.e(Kernel.LOG_TAG, "Service create", e);
 		}
 	}
 
@@ -280,7 +280,7 @@ public class DynatweakService extends Service {
 								}
 							}
 						} catch (IOException e) {
-							Log.wtf("Dynatweak", "Timer run", e);
+							Log.wtf(Kernel.LOG_TAG, "Timer run", e);
 						}
 					}
 				}

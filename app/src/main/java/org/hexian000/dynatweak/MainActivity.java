@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
 				return;
 			}
 		} catch (Throwable e) {
-			Log.d("Dynatweak", "Unsupported", e);
+			Log.d(Kernel.LOG_TAG, "Unsupported", e);
 			Toast.makeText(this, R.string.kernel_unsupported, Toast.LENGTH_SHORT).show();
 			finish();
 			return;
@@ -118,12 +118,12 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
-				properties.setProperty("interactive_profile", "1");
+				properties.setProperty("interactive_profile", BootReceiver.PROFILE_BANLANCED + "");
 				applySettings();
 				saveProperties(MainActivity.this);
 			}
 		});
-		spinnerProfile.setSelection(Integer.parseInt(properties.getProperty("interactive_profile", "1")));
+		spinnerProfile.setSelection(Integer.parseInt(properties.getProperty("interactive_profile", BootReceiver.PROFILE_BANLANCED + "")));
 
 		spinnerHotplug.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			boolean first = true;
@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
 					BootReceiver.tweak(hotplug_profile, profile);
 					msg.what = 0;
 				} catch (Throwable e) {
-					Log.e("Dynatweak", "MainActivity.applySettings()", e);
+					Log.e(Kernel.LOG_TAG, "MainActivity.applySettings()", e);
 					msg.what = 1;
 				}
 				handler.sendMessage(msg);

@@ -34,9 +34,9 @@ class DeviceInfo {
 			try {
 				cpu = new CPU(cpuCore.getId(), stat);
 				nodes.add(cpu);
-				Log.d("Dynatweak", "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
+				Log.d(Kernel.LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
 			} catch (IOException ex) {
-				Log.e("Dynatweak", "Overlay init", ex);
+				Log.e(Kernel.LOG_TAG, "Overlay init", ex);
 			}
 		}
 		stat.initialize(k.cpuCores.size());
@@ -62,7 +62,7 @@ class DeviceInfo {
 			try {
 				dev.generateHtml(sb);
 			} catch (IOException ex) {
-				Log.e("Dynatweak", "Device info error", ex);
+				Log.e(Kernel.LOG_TAG, "Device info error", ex);
 			}
 			sb.append("<br/>");
 		}
