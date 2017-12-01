@@ -325,28 +325,28 @@ public class BootReceiver extends BroadcastReceiver {
 		// CPU Boost
 		k.trySetNode("/sys/module/cpu_boost/parameters/boost_ms", "40");
 		k.trySetNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
+		StringBuilder boostFreq = new StringBuilder(), boostFreq_s2 = new StringBuilder();
 		for (Kernel.CpuCore cpu : k.cpuCores) {
-			String boostFreq, boostFreq_s2;
 			if (multiCluster) {
 				if (cpu.getCluster() == 0 && cpu.getId() < 2) {
-					boostFreq = cpu.getId() + ":" + cpu.fitPercentage(0.5);
-					boostFreq_s2 = cpu.getId() + ":" + cpu.fitPercentage(0.3);
+					boostFreq.append(cpu.getId()).append(':').append(cpu.fitPercentage(0.5)).append(' ');
+					boostFreq_s2.append(cpu.getId()).append(':').append(cpu.fitPercentage(0.3)).append(' ');
 				} else {
-					boostFreq = cpu.getId() + ":0";
-					boostFreq_s2 = cpu.getId() + ":0";
+					boostFreq.append(cpu.getId()).append(":0 ");
+					boostFreq_s2.append(cpu.getId()).append(": ");
 				}
 			} else {
 				if (cpu.getId() < 2) {
-					boostFreq = cpu.getId() + ":" + cpu.fitPercentage(0.5);
-					boostFreq_s2 = cpu.getId() + ":" + cpu.fitPercentage(0.3);
+					boostFreq.append(cpu.getId()).append(':').append(cpu.fitPercentage(0.5)).append(' ');
+					boostFreq_s2.append(cpu.getId()).append(":").append(cpu.fitPercentage(0.3)).append(' ');
 				} else {
-					boostFreq = cpu.getId() + ":0";
-					boostFreq_s2 = cpu.getId() + ":0";
+					boostFreq.append(cpu.getId()).append(":0 ");
+					boostFreq_s2.append(cpu.getId()).append(":0 ");
 				}
 			}
-			k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_freq", boostFreq);
-			k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_freq_s2", boostFreq_s2);
 		}
+		k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_freq", boostFreq.toString());
+		k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_freq_s2", boostFreq_s2.toString());
 		k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_ms", "80");
 		k.trySetNode("/sys/module/cpu_boost/parameters/input_boost_ms_s2", "160");
 
