@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class BootReceiver extends BroadcastReceiver {
 
-	static final int PROFILE_BANLANCED = 2;
+	static final int PROFILE_BALANCED = 2;
 	private static final int PROFILE_DISABLED = 0;
 	private static final int PROFILE_POWERSAVE = 1;
 	private static final int PROFILE_PERFORMANCE = 3;
@@ -117,7 +117,7 @@ public class BootReceiver extends BroadcastReceiver {
 					governor.add(preferGovernor(allGovernors, preferList));
 					break;
 				}
-				case PROFILE_BANLANCED: {
+				case PROFILE_BALANCED: {
 					final String[] preferList = {"blu_active", "zzmoove"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					break;
@@ -146,11 +146,11 @@ public class BootReceiver extends BroadcastReceiver {
 						profiles.add(PROFILE_POWERSAVE);
 						break;
 					}
-					case PROFILE_BANLANCED: {
+					case PROFILE_BALANCED: {
 						final String[] preferList = {"blu_active", "zzmoove"};
 						governor.add(preferGovernor(allGovernors, preferList));
 						if (i == 0) {
-							profiles.add(PROFILE_BANLANCED);
+							profiles.add(PROFILE_BALANCED);
 						} else {
 							profiles.add(PROFILE_POWERSAVE);
 						}
@@ -164,7 +164,7 @@ public class BootReceiver extends BroadcastReceiver {
 						} else {
 							final String[] preferList = {"blu_active", "zzmoove"};
 							governor.add(preferGovernor(allGovernors, preferList));
-							profiles.add(PROFILE_BANLANCED);
+							profiles.add(PROFILE_BALANCED);
 						}
 						break;
 					}
@@ -223,7 +223,7 @@ public class BootReceiver extends BroadcastReceiver {
 									setAllCoresTheSame("90", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 							break;
-						case PROFILE_BANLANCED:
+						case PROFILE_BALANCED:
 							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
 									setAllCoresTheSame("40", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/busy_up_thres",
@@ -256,7 +256,7 @@ public class BootReceiver extends BroadcastReceiver {
 									setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
 							k.trySetNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
 							break;
-						case PROFILE_BANLANCED:
+						case PROFILE_BALANCED:
 						case PROFILE_PERFORMANCE:
 						case PROFILE_GAMING:
 							k.trySetNode(cpu.getPath() + "/core_ctl/busy_down_thres",
@@ -286,7 +286,7 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setSysctl("kernel.sched_spill_nr_run", "1");
 				k.setSysctl("kernel.sched_spill_load", "50");
 				break;
-			case PROFILE_BANLANCED:
+			case PROFILE_BALANCED:
 				k.setSysctl("kernel.sched_downmigrate", "70");
 				k.setSysctl("kernel.sched_upmigrate", "95");
 				k.setSysctl("kernel.sched_spill_nr_run", "4");
@@ -373,7 +373,7 @@ public class BootReceiver extends BroadcastReceiver {
 					}
 				}
 				break;
-			case PROFILE_BANLANCED: // governor controlled with idler
+			case PROFILE_BALANCED: // governor controlled with idler
 				// Adreno Idler
 				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "Y");
 				k.trySetNode("/sys/module/adreno_idler/parameters/adreno_idler_downdifferential", "40");
@@ -639,7 +639,7 @@ public class BootReceiver extends BroadcastReceiver {
 						break;
 				}
 				break;
-			case PROFILE_BANLANCED: // balanced
+			case PROFILE_BALANCED: // balanced
 				switch (governor) {
 					case "interactive":
 						k.trySetNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.8) + "");
