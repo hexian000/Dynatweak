@@ -172,25 +172,9 @@ public class DynatweakService extends Service {
 		super.onDestroy();
 	}
 
-	/*public class PluggedReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (DynatweakService.chargingOnly) {
-				int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-				boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-						status == BatteryManager.BATTERY_STATUS_FULL;
-				if (isCharging) {
-					if (!visible) createOverlay(DynatweakService.this);
-				} else {
-					if (visible) removeOverlay();
-				}
-			}
-		}
-	}*/
-
 	private void updateOverlay() {
 		if (monitorOverlay != null) {
-			TextView textView = (TextView) monitorOverlay.findViewById(R.id.textView);
+			TextView textView = monitorOverlay.findViewById(R.id.textView);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 				textView.setText(Html.fromHtml(deviceInfo.getHtml(), Html.FROM_HTML_MODE_COMPACT));
 			} else {

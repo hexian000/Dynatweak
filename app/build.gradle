@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "27.0.1"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.3"
     defaultConfig {
         applicationId "org.hexian000.dynatweak"
         minSdkVersion 19
-        targetSdkVersion 25
-        versionCode 41
+        targetSdkVersion 26
+        versionCode 42
         versionName "5.2.0 beta"
     }
     buildTypes {
@@ -20,5 +20,4 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.3.1'
 }

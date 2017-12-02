@@ -60,12 +60,12 @@ public class MainActivity extends Activity {
 		final boolean supportThermal = k.cpuCores.get(0).hasTemperature();
 
 		// 初始化控件
-		CheckBox checkMasterSwitch = (CheckBox) findViewById(R.id.checkMasterSwitch);
-		spinnerProfile = (Spinner) findViewById(R.id.spinnerProfile);
-		spinnerHotplug = (Spinner) findViewById(R.id.spinnerHotplug);
-		toggleService = (ToggleButton) findViewById(R.id.toggleService);
-		toggleMonitor = (ToggleButton) findViewById(R.id.toggleMonitor);
-		toggleThermal = (ToggleButton) findViewById(R.id.toggleThermal);
+		CheckBox checkMasterSwitch = findViewById(R.id.checkMasterSwitch);
+		spinnerProfile = findViewById(R.id.spinnerProfile);
+		spinnerHotplug = findViewById(R.id.spinnerHotplug);
+		toggleService = findViewById(R.id.toggleService);
+		toggleMonitor = findViewById(R.id.toggleMonitor);
+		toggleThermal = findViewById(R.id.toggleThermal);
 
 		// 加载设置
 		loadProperties(this);
