@@ -29,12 +29,12 @@ import java.util.TimerTask;
 public class DynatweakService extends Service {
 
 	static DynatweakService instance = null;
+	private final Handler handler = new Handler();
 	//	static boolean chargingOnly = false;
 	private boolean thermal = false;
 	private boolean visible = false;
 	private int[] thermal_last_limits = null;
 	private Kernel k;
-	private final Handler handler = new Handler();
 	private Timer timer = null;
 	private WindowManager windowManager = null;
 	private MonitorOverlay monitorOverlay = null;
@@ -192,7 +192,11 @@ public class DynatweakService extends Service {
 		monitorOverlay = new MonitorOverlay(context);
 
 		WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-		layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+		if (Build.VERSION.SDK_INT >= 26) {
+			layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+		} else {
+			layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+		}
 		layoutParams.format = PixelFormat.RGBA_8888;
 		layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
 				| WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
