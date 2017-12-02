@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	static void saveProperties(Context context) {
+	private static void saveProperties(Context context) {
 		try {
 			properties.store(context.openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE), null);
 		} catch (IOException ignore) {
@@ -198,13 +198,8 @@ public class MainActivity extends Activity {
 							properties.setProperty("hotplug_profile", "0");
 							applySettings();
 						}
-						try {
-							if (DynatweakService.instance != null)
-								DynatweakService.instance.startThermal();
-						} catch (IOException e) {
-							Toast.makeText(MainActivity.this, R.string.boot_exception, Toast.LENGTH_SHORT).show();
-							toggleThermal.setChecked(false);
-						}
+						if (DynatweakService.instance != null)
+							DynatweakService.instance.startThermal();
 						properties.setProperty("thermal_service", "enabled");
 					}
 				} else {
@@ -240,7 +235,7 @@ public class MainActivity extends Activity {
 
 class ProgressHandler extends Handler {
 	private ProgressDialog tweaking;
-	private Context context;
+	private final Context context;
 
 	ProgressHandler(Context context) {
 		tweaking = ProgressDialog.show(context, "正在应用设置", "请稍候...");

@@ -34,7 +34,7 @@ public class DynatweakService extends Service {
 	private boolean visible = false;
 	private int[] thermal_last_limits = null;
 	private Kernel k;
-	private Handler handler = new Handler();
+	private final Handler handler = new Handler();
 	private Timer timer = null;
 	private WindowManager windowManager = null;
 	private MonitorOverlay monitorOverlay = null;
@@ -65,7 +65,7 @@ public class DynatweakService extends Service {
 		if (visible) removeOverlay();
 	}
 
-	void startThermal() throws IOException {
+	void startThermal() {
 		if (!thermal) {
 			int n = k.cpuCores.size();
 			thermal_last_limits = new int[n];
@@ -136,11 +136,8 @@ public class DynatweakService extends Service {
 		if (monitor) showMonitor();
 		boolean supportThermal = k.cpuCores.get(0).hasTemperature();
 		boolean thermal = MainActivity.properties.getProperty("thermal_service", "disabled").equals("enabled");
-		if (supportThermal && thermal) try {
+		if (supportThermal && thermal) {
 			startThermal();
-		} catch (IOException e) {
-			MainActivity.properties.setProperty("thermal_service", "disabled");
-			MainActivity.saveProperties(this);
 		}
 		instance = this;
 		return START_STICKY;
@@ -149,12 +146,8 @@ public class DynatweakService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		try {
-			k = Kernel.getInstance();
-			deviceInfo = new DeviceInfo(k);
-		} catch (IOException e) {
-			Log.e(Kernel.LOG_TAG, "Service create", e);
-		}
+		k = Kernel.getInstance();
+		deviceInfo = new DeviceInfo(k);
 	}
 
 	@Override

@@ -17,41 +17,28 @@ import java.util.Locale;
 class DeviceInfo {
 
 	private final boolean tzBuild = false;
-	CpuStat stat;
-	private List<DeviceNode> nodes;
+	final CpuStat stat;
+	private final List<DeviceNode> nodes;
 
 	DeviceInfo(Kernel k) {
 		nodes = new ArrayList<>();
-		try {
-			DeviceNode soc = new SoC();
-			if (soc.hasAny())
-				nodes.add(soc);
-		} catch (IOException ignore) {
-		}
+		DeviceNode soc = new SoC();
+		if (soc.hasAny())
+			nodes.add(soc);
 		CPU cpu;
 		stat = new CpuStat();
 		for (Kernel.CpuCore cpuCore : k.cpuCores) {
-			try {
-				cpu = new CPU(cpuCore.getId(), stat);
-				nodes.add(cpu);
-				Log.d(Kernel.LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
-			} catch (IOException ex) {
-				Log.e(Kernel.LOG_TAG, "Overlay init", ex);
-			}
+			cpu = new CPU(cpuCore.getId(), stat);
+			nodes.add(cpu);
+			Log.d(Kernel.LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
 		}
 		stat.initialize(k.cpuCores.size());
-		try {
-			DeviceNode gpu = new GPU();
-			if (gpu.hasAny())
-				nodes.add(gpu);
-		} catch (IOException ignore) {
-		}
+		DeviceNode gpu = new GPU();
+		if (gpu.hasAny())
+			nodes.add(gpu);
 		nodes.add(stat);
 		if (tzBuild) {
-			try {
-				nodes.add(new Sensors());
-			} catch (IOException ignore) {
-			}
+			nodes.add(new Sensors());
 		}
 		k.releaseRoot();
 	}
@@ -165,7 +152,7 @@ class DeviceInfo {
 		}
 
 		@Override
-		public void generateHtml(StringBuilder out) throws IOException {
+		public void generateHtml(StringBuilder out) {
 			double idle = (double) cpu_all_idle / cpu_all_total;
 			if (idle < 0) idle = 0;
 			else if (idle > 1) idle = 1;
@@ -190,7 +177,7 @@ class DeviceInfo {
 		String node_battery_curr, node_battery_volt;
 		boolean hasSocTemp, hasBatteryTemp;
 
-		SoC() throws IOException {
+		SoC() {
 			Kernel k = Kernel.getInstance();
 			node_battery_curr = "/sys/class/power_supply/battery/current_now";
 			hasSocTemp = k.hasSocTemperature();
@@ -231,7 +218,7 @@ class DeviceInfo {
 		}
 
 		@Override
-		public void generateHtml(StringBuilder out) throws IOException {
+		public void generateHtml(StringBuilder out) {
 			Kernel k = Kernel.getInstance();
 			if (hasSocTemp) {
 				out.append("SoC:");
@@ -281,10 +268,10 @@ class DeviceInfo {
 
 	private class GPU implements DeviceNode {
 
-		String gpu_freq = null, governor = null;
+		String gpu_freq, governor;
 		boolean gpu_temp;
 
-		GPU() throws IOException {
+		GPU() {
 			Kernel k = Kernel.getInstance();
 			gpu_freq = "/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq";
 			if (!k.hasNode(gpu_freq)) {
@@ -325,7 +312,7 @@ class DeviceInfo {
 		}
 
 		@Override
-		public void generateHtml(StringBuilder out) throws IOException {
+		public void generateHtml(StringBuilder out) {
 			Kernel k = Kernel.getInstance();
 			out.append("gpu: ");
 			if (k.hasGpuTemperature()) {
@@ -355,10 +342,10 @@ class DeviceInfo {
 
 	private class Sensors implements DeviceNode {
 
-		List<MaxTempReader> sensors = new ArrayList<>();
-		int soc_id;
+		final List<MaxTempReader> sensors = new ArrayList<>();
+		final int soc_id;
 
-		Sensors() throws IOException {
+		Sensors() {
 			String path;
 			Kernel k = Kernel.getInstance();
 			soc_id = k.getSocRawID();
@@ -400,13 +387,13 @@ class DeviceInfo {
 	}
 
 	private class CPU implements DeviceNode {
-		int id;
-		Kernel.CpuCore core;
-		CpuStat stat;
+		final int id;
+		final Kernel.CpuCore core;
+		final CpuStat stat;
 
 		int curFreq, maxFreq;
 
-		CPU(int id, CpuStat stat) throws IOException {
+		CPU(int id, CpuStat stat) {
 			this.id = id;
 			this.stat = stat;
 			core = Kernel.getInstance().cpuCores.get(id);
@@ -417,7 +404,7 @@ class DeviceInfo {
 			}
 		}
 
-		public void generateHtml(StringBuilder out) throws IOException {
+		public void generateHtml(StringBuilder out) {
 			boolean on = core.isOnline();
 			if (on) out.append("<font color=\"#00ff00\">");
 			else out.append("<font color=\"#ff0000\">");

@@ -14,7 +14,7 @@ class Kernel {
     static final String LOG_TAG = "Dynatweak";
 
     private static Kernel instance = null;
-    List<CpuCore> cpuCores;
+    final List<CpuCore> cpuCores;
     private String COMMAND_sysctl = "sysctl";
     private String COMMAND_chmod = "chmod";
     private Process root;
@@ -22,9 +22,9 @@ class Kernel {
     private PrintStream exec;
     private int raw_id;
     private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
-    private List<ClusterPolicy> clusterPolicies;
+    private final List<ClusterPolicy> clusterPolicies;
 
-    private Kernel() throws IOException {
+    private Kernel() {
         raw_id = -1;
         final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
         for (String node : raw_id_nodes) {
@@ -45,51 +45,59 @@ class Kernel {
         } catch (Throwable ignore) {
         }
 
-        if (raw_id == 1972 || raw_id == 1973 || raw_id == 1974) { // Xiaomi Mi 3/4/Note
-            try {
-                socTemp = new AdaptiveTempReader(this, getThermalZone(0));
-            } catch (Throwable ignore) {
-            }
-            try {
-                gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
-            } catch (Throwable ignore) {
-            }
-        } else if (raw_id == 1812) { // Xiaomi Mi 2/2S
-            try {
-                socTemp = new AdaptiveTempReader(this, getThermalZone(0));
-            } catch (Throwable ignore) {
-            }
-            try {
-                gpuTemp = new AdaptiveTempReader(this, getThermalZone(2));
-            } catch (Throwable ignore) {
-            }
-        } else if (raw_id == 94) { // ONEPLUS A5000
-            try {
-                socTemp = new AdaptiveTempReader(this, getThermalZone(1));
-            } catch (Throwable ignore) {
-            }
-            try {
-                gpuTemp = new AdaptiveTempReader(this, getThermalZone(20));
-            } catch (Throwable ignore) {
-            }
-        } else if (raw_id == 95) { // ONEPLUS A3010
-            try {
-                socTemp = new AdaptiveTempReader(this, getThermalZone(22));
-            } catch (Throwable ignore) {
-            }
-            try {
-                gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
-            } catch (Throwable ignore) {
-            }
-        } else if (raw_id == 2375) { // Xiaomi Mi 5
-            try {
-                socTemp = new AdaptiveTempReader(this, getThermalZone(1));
-            } catch (Throwable ignore) {
-            }
-            try {
-                gpuTemp = new AdaptiveTempReader(this, getThermalZone(16));
-            } catch (Throwable ignore) {
-            }
+        switch (raw_id) {
+            case 1972:
+            case 1973:
+            case 1974:  // Xiaomi Mi 3/4/Note
+                try {
+                    socTemp = new AdaptiveTempReader(this, getThermalZone(0));
+                } catch (Throwable ignore) {
+                }
+                try {
+                    gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
+                } catch (Throwable ignore) {
+                }
+                break;
+            case 1812:  // Xiaomi Mi 2/2S
+                try {
+                    socTemp = new AdaptiveTempReader(this, getThermalZone(0));
+                } catch (Throwable ignore) {
+                }
+                try {
+                    gpuTemp = new AdaptiveTempReader(this, getThermalZone(2));
+                } catch (Throwable ignore) {
+                }
+                break;
+            case 94:  // ONEPLUS A5000
+                try {
+                    socTemp = new AdaptiveTempReader(this, getThermalZone(1));
+                } catch (Throwable ignore) {
+                }
+                try {
+                    gpuTemp = new AdaptiveTempReader(this, getThermalZone(20));
+                } catch (Throwable ignore) {
+                }
+                break;
+            case 95:  // ONEPLUS A3010
+                try {
+                    socTemp = new AdaptiveTempReader(this, getThermalZone(22));
+                } catch (Throwable ignore) {
+                }
+                try {
+                    gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
+                } catch (Throwable ignore) {
+                }
+                break;
+            case 2375:  // Xiaomi Mi 5
+                try {
+                    socTemp = new AdaptiveTempReader(this, getThermalZone(1));
+                } catch (Throwable ignore) {
+                }
+                try {
+                    gpuTemp = new AdaptiveTempReader(this, getThermalZone(16));
+                } catch (Throwable ignore) {
+                }
+                break;
         }
 
         clusterPolicies = new ArrayList<>();
@@ -99,24 +107,33 @@ class Kernel {
         while (new File(cpuPath + "/cpu" + cpuId).exists()) {
             try {
                 CpuCore cpu;
-                if (raw_id == 1972 || raw_id == 1973 || raw_id == 1974) { // Xiaomi Mi 3/4/Note
-                    cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-                            getThermalZone(cpuId + 5));
-                } else if (raw_id == 94) { // ONEPLUS A5000
-                    cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-                            getThermalZone(cpuId + 11));
-                } else if (raw_id == 95) { // ONEPLUS A3010
-                    cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-                            getThermalZone(cpuId + 5));
-                } else if (raw_id == 2375) { // Xiaomi Mi 5
-                    cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-                            getThermalZone(cpuId + 9));
-                } else if (raw_id == 1812) { // Xiaomi Mi 2/2S
-                    cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-                            getThermalZone(cpuId + 7));
-                } else {
-                    cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-                            null);
+                switch (raw_id) {
+                    case 1972:
+                    case 1973:
+                    case 1974:  // Xiaomi Mi 3/4/Note
+                        cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+                                getThermalZone(cpuId + 5));
+                        break;
+                    case 94:  // ONEPLUS A5000
+                        cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+                                getThermalZone(cpuId + 11));
+                        break;
+                    case 95:  // ONEPLUS A3010
+                        cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+                                getThermalZone(cpuId + 5));
+                        break;
+                    case 2375:  // Xiaomi Mi 5
+                        cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+                                getThermalZone(cpuId + 9));
+                        break;
+                    case 1812:  // Xiaomi Mi 2/2S
+                        cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+                                getThermalZone(cpuId + 7));
+                        break;
+                    default:
+                        cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+                                null);
+                        break;
                 }
                 cpuCores.add(cpu);
             } catch (Throwable ignore) {
@@ -155,7 +172,7 @@ class Kernel {
         }
     }
 
-    static Kernel getInstance() throws IOException {
+    static Kernel getInstance() {
         if (instance == null) instance = new Kernel();
         return instance;
     }
@@ -411,9 +428,9 @@ class Kernel {
     }
 
     class ClusterPolicy {
-        private int StartCpu;
-        private int[] AffectedCpu;
-        private String PolicyPath;
+        private final int StartCpu;
+        private final int[] AffectedCpu;
+        private final String PolicyPath;
 
         ClusterPolicy(int startCpu, int[] cpu, String path) {
             StartCpu = startCpu;
@@ -437,8 +454,9 @@ class Kernel {
     class CpuCore {
         AdaptiveTempReader tempNode = null;
         private List<Integer> scaling_available_frequencies = null;
-        private int id, cluster;
-        private String path;
+        private final int id;
+        private final String path;
+        private int cluster;
 
         CpuCore(int id, String path, String tempNode) {
             if (tempNode != null) {
@@ -533,7 +551,7 @@ class Kernel {
 			return Integer.parseInt(ret);
 		}*/
 
-        void setScalingMinFrequency(int frequency) throws IOException {
+        void setScalingMinFrequency(int frequency) {
             trySetNode(path + "/cpufreq/scaling_min_freq", frequency + "");
         }
 
