@@ -101,6 +101,13 @@ class Kernel {
 				} catch (Throwable ignore) {
 				}
 				break;
+			case 70:  // Xiaomi Mi 5X
+				try {
+					socTemp = new AdaptiveTempReader(this, getThermalZone(20));
+				} catch (Throwable ignore) {
+				}
+				gpuTemp = null;
+				break;
 		}
 
 		clusterPolicies = new ArrayList<>();
@@ -116,6 +123,10 @@ class Kernel {
 					case 1974:  // Xiaomi Mi 3/4/Note
 						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
 								getThermalZone(cpuId + 5));
+						break;
+					case 70:  // Xiaomi Mi 5X
+						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+								getThermalZone(cpuId + 10));
 						break;
 					case 94:  // ONEPLUS A5000
 						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
@@ -448,6 +459,11 @@ class Kernel {
 				root.waitFor();
 			} catch (InterruptedException ignore) {
 			}
+			try {
+				stdout.close();
+			} catch (IOException ignore) {
+			}
+			stdout = null;
 			exec = null;
 			root = null;
 		}
