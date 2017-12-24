@@ -7,8 +7,8 @@ android {
         applicationId "org.hexian000.dynatweak"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 42
-        versionName "5.2.0 beta"
+        versionCode 43
+        versionName "5.2.1"
     }
     buildTypes {
         release {
