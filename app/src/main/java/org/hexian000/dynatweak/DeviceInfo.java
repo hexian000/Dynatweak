@@ -16,8 +16,8 @@ import java.util.Locale;
  */
 class DeviceInfo {
 
-	private final boolean tzBuild = false;
 	final CpuStat stat;
+	private final boolean tzBuild = false;
 	private final List<DeviceNode> nodes;
 
 	DeviceInfo(Kernel k) {
@@ -195,7 +195,7 @@ class DeviceInfo {
 				hasBatteryTemp = false;
 			}
 			if (k.hasNode(node_battery_curr)) {
-				k.grantRead(node_battery_curr);
+				// k.grantRead(node_battery_curr);
 				try {
 					k.readNode(node_battery_curr);
 				} catch (Throwable ignore) {
@@ -205,7 +205,7 @@ class DeviceInfo {
 			if (!(hasBatteryTemp && hasSocTemp && node_battery_curr != null)) {
 				node_battery_volt = "/sys/class/power_supply/battery/voltage_now";
 				if (k.hasNode(node_battery_volt)) {
-					k.grantRead(node_battery_volt);
+					// k.grantRead(node_battery_volt);
 					try {
 						k.readNode(node_battery_volt);
 					} catch (Throwable ignore) {
@@ -280,7 +280,7 @@ class DeviceInfo {
 					gpu_freq = null;
 			}
 			if (gpu_freq != null) {
-				k.grantRead(gpu_freq);
+				// k.grantRead(gpu_freq);
 				try {
 					k.readNode(gpu_freq);
 				} catch (Throwable ignore) {
@@ -291,7 +291,7 @@ class DeviceInfo {
 			if (!k.hasNode(governor))
 				governor = null;
 			if (governor != null) {
-				k.grantRead(governor);
+				// k.grantRead(governor);
 				try {
 					k.readNode(governor);
 				} catch (Throwable ignore) {
