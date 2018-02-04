@@ -316,18 +316,21 @@ class Kernel {
 		exec.println("echo '" + end + "'");
 		exec.flush();
 		boolean started = false;
+		StringBuilder sb = new StringBuilder();
 		while (true) {
 			String line = stdout.readLine();
 			if (started) {
 				if (line.equals(end)) {
-					return "";
+					break;
 				} else {
+					sb.append(line).append(System.lineSeparator());
 					return line;
 				}
 			} else if (line.equals(start)) {
 				started = true;
 			}
 		}
+		return sb.toString();
 	}
 
 	private void setNode(String path, String value) throws IOException {
