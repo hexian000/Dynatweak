@@ -1138,9 +1138,6 @@ public class BootReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (!intent.getAction().equals("BOOT_COMPLETED")) {
-			return;
-		}
 		try {
 			MainActivity.loadProperties(context);
 			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
