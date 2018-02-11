@@ -366,10 +366,11 @@ class Kernel {
 		if (hasNode(node)) {
 			try {
 				setNode(node, value);
-				if (readNode(node).equals(value))
+				String nowValue = readNode(node);
+				if (nowValue.equals(value))
 					return true;
 				else
-					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + value);
+					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + nowValue);
 			} catch (Throwable e) {
 				Log.w(LOG_TAG, "trySetNode failed: " + node, e);
 			}
@@ -433,7 +434,7 @@ class Kernel {
 	}
 
 	/*void logSu() throws IOException {
-        exec.println("exit");
+	    exec.println("exit");
 		exec.flush();
 		try {
 			root.waitFor();
