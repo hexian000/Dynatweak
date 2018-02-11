@@ -329,13 +329,13 @@ class Kernel {
 		while (true) {
 			String line = stdout.readLine();
 			if (started) {
-				if (line.equals(end)) {
+				if (end.equals(line)) {
 					break;
 				} else {
 					sb.append(line).append(System.lineSeparator());
 					return line;
 				}
-			} else if (line.equals(start)) {
+			} else if (start.equals(line)) {
 				started = true;
 			}
 		}

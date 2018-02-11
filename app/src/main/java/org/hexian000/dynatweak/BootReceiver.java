@@ -477,8 +477,7 @@ public class BootReceiver extends BroadcastReceiver {
 	private static String setAllCoresTheSame(String value, int core) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < core; i++) {
-			sb.append(value);
-			sb.append(' ');
+			sb.append(value).append(' ');
 		}
 		return sb.toString();
 	}
