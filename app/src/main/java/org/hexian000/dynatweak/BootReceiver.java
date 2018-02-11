@@ -647,13 +647,13 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.8) + "");
 						k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0.4) + "");
 						k.setNode(policy + "/interactive/up_threshold_any_cpu_freq", cpu.fitPercentage(0.9) + "");
-						k.setNode(policy + "/blu_active/above_hispeed_delay",
+						k.setNode(policy + "/interactive/above_hispeed_delay",
 								"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
 										cpu.fitPercentage(0.7) + ":20000 " +
 										cpu.fitPercentage(0.85) + ":80000 " +
 										cpu.fitPercentage(1) + ":100000");
 						k.setNode(policy + "/interactive/go_hispeed_load", "95");
-						k.setNode(policy + "/blu_active/target_loads",
+						k.setNode(policy + "/interactive/target_loads",
 								"85 " + cpu.fitPercentage(0.6) + ":90 " +
 										cpu.fitPercentage(0.8) + ":70 " +
 										cpu.fitPercentage(0.9) + ":95");
@@ -806,7 +806,7 @@ public class BootReceiver extends BroadcastReceiver {
 			case PROFILE_PERFORMANCE: // performance
 				switch (governor) {
 					case "interactive":
-						k.setNode(policy + "/blu_active/above_hispeed_delay",
+						k.setNode(policy + "/interactive/above_hispeed_delay",
 								"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
 										cpu.fitPercentage(0.7) + ":20000 " +
 										cpu.fitPercentage(0.85) + ":80000 " +
