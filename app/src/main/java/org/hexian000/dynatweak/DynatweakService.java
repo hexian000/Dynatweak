@@ -18,9 +18,10 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static org.hexian000.dynatweak.Kernel.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -30,10 +31,7 @@ public class DynatweakService extends Service {
 
 	static DynatweakService instance = null;
 	private final Handler handler = new Handler();
-	//	static boolean chargingOnly = false;
-	private boolean thermal = false;
 	private boolean visible = false;
-	private int[] thermal_last_limits = null;
 	private Kernel k;
 	private Timer timer = null;
 	private WindowManager windowManager = null;
@@ -65,30 +63,6 @@ public class DynatweakService extends Service {
 		if (visible) removeOverlay();
 	}
 
-	void startThermal() {
-		if (!thermal) {
-			int n = k.cpuCores.size();
-			thermal_last_limits = new int[n];
-			for (int i = 0; i < n; i++)
-				thermal_last_limits[i] = -1;
-			thermal = true;
-		}
-	}
-
-	void stopThermal() {
-		if (thermal) {
-			thermal = false;
-			thermal_last_limits = null;
-			for (Kernel.CpuCore cpu : k.cpuCores) {
-				try {
-					cpu.setOnline(true, false);
-					cpu.setScalingMaxFrequency(cpu.fitPercentage(1), false);
-				} catch (Throwable ignore) {
-				}
-			}
-		}
-	}
-
 	@Override
 	public IBinder onBind(Intent intent) {
 		throw new UnsupportedOperationException();
@@ -115,30 +89,17 @@ public class DynatweakService extends Service {
 					} else if (Intent.ACTION_SCREEN_OFF.equals(action)) {
 						timer.cancel();
 						timer = null;
-					}/* else if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
-							if (chargingOnly) {
-								int status = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-								if (status != 0) {
-									if (!visible) createOverlay(DynatweakService.this);
-								} else if (visible) removeOverlay();
-							} else if (!visible) createOverlay(DynatweakService.this);
-						}*/
+					}
 				}
 			};
 			IntentFilter filter = new IntentFilter();
 			filter.addAction(Intent.ACTION_SCREEN_ON);
 			filter.addAction(Intent.ACTION_SCREEN_OFF);
-//				filter.addAction(Intent.ACTION_BATTERY_CHANGED);
 			registerReceiver(eventListener, filter);
 		}
 		MainActivity.loadProperties(this);
 		boolean monitor = MainActivity.properties.getProperty("monitor_service", "disabled").equals("enabled");
 		if (monitor) showMonitor();
-		boolean supportThermal = k.cpuCores.get(0).hasTemperature();
-		boolean thermal = MainActivity.properties.getProperty("thermal_service", "disabled").equals("enabled");
-		if (supportThermal && thermal) {
-			startThermal();
-		}
 		instance = this;
 		return START_STICKY;
 	}
@@ -153,7 +114,6 @@ public class DynatweakService extends Service {
 	@Override
 	public void onDestroy() {
 		hideMonitor();
-		stopThermal();
 		if (timer != null) {
 			timer.cancel();
 			timer = null;
@@ -178,7 +138,6 @@ public class DynatweakService extends Service {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 				textView.setText(Html.fromHtml(deviceInfo.getHtml(), Html.FROM_HTML_MODE_COMPACT));
 			} else {
-				//noinspection deprecation
 				textView.setText(Html.fromHtml(deviceInfo.getHtml()));
 			}
 		}
@@ -187,6 +146,10 @@ public class DynatweakService extends Service {
 	private void createOverlay(Context context) throws WindowManager.BadTokenException {
 		Point screenSize = new Point();
 		windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+		if (windowManager == null) {
+			Log.e(LOG_TAG, "WindowManager is null");
+			return;
+		}
 		windowManager.getDefaultDisplay().getSize(screenSize);
 
 		monitorOverlay = new MonitorOverlay(context);
@@ -229,40 +192,6 @@ public class DynatweakService extends Service {
 					if (visible) {
 						deviceInfo.stat.sample();
 						updateOverlay();
-					}
-					if (thermal) {
-						try {
-							for (Kernel.CpuCore cpu : k.cpuCores) {
-								int id = cpu.getId();
-								double temp = cpu.getTemperature();
-								if (cpu.isOnline()) {
-									try {
-										int freq = thermal_last_limits[id];
-										if (temp >= 90 && id == 0) {
-											freq = cpu.fitPercentage(0);
-										}
-										if (temp >= 80) {
-											freq = cpu.fitPercentage(0.5);
-										} else if (temp >= 70) {
-											freq = cpu.fitPercentage(0.75);
-										} else if (temp < 60) {
-											freq = cpu.fitPercentage(1);
-										}
-										if (temp >= 90 && id != 0)
-											cpu.setOnline(false, true);
-										else if (freq != thermal_last_limits[id]) {
-											cpu.setScalingMaxFrequency(freq, true);
-											thermal_last_limits[id] = freq;
-										}
-									} catch (Throwable ignore) {
-									}
-								} else if (temp < 75 && id != 0) {
-									cpu.setOnline(true, false);
-								}
-							}
-						} catch (IOException e) {
-							Log.wtf(Kernel.LOG_TAG, "Timer run", e);
-						}
 					}
 				}
 			});

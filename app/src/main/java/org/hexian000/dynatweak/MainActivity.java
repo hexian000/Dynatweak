@@ -9,7 +9,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.Spinner;
+import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -17,7 +23,7 @@ import java.util.Properties;
 public class MainActivity extends Activity {
 	private static final String PREFERENCES_FILE_NAME = "preferences";
 	static Properties properties = null;
-	private ToggleButton toggleService, toggleMonitor, toggleThermal;
+	private ToggleButton toggleService, toggleMonitor;
 	private Spinner spinnerProfile, spinnerHotplug;
 
 	static void loadProperties(Context context) {
@@ -57,7 +63,6 @@ public class MainActivity extends Activity {
 			finish();
 			return;
 		}
-		final boolean supportThermal = k.cpuCores.get(0).hasTemperature();
 
 		// 初始化控件
 		CheckBox checkMasterSwitch = findViewById(R.id.checkMasterSwitch);
@@ -65,7 +70,7 @@ public class MainActivity extends Activity {
 		spinnerHotplug = findViewById(R.id.spinnerHotplug);
 		toggleService = findViewById(R.id.toggleService);
 		toggleMonitor = findViewById(R.id.toggleMonitor);
-		toggleThermal = findViewById(R.id.toggleThermal);
+		Button buttonApply = findViewById(R.id.buttonApply);
 
 		// 加载设置
 		loadProperties(this);
@@ -81,9 +86,6 @@ public class MainActivity extends Activity {
 			stopService(new Intent(this, DynatweakService.class));
 		boolean monitor = properties.getProperty("monitor_service", "disabled").equals("enabled");
 		toggleMonitor.setChecked(monitor);
-		boolean thermal = properties.getProperty("thermal_service", "disabled").equals("enabled");
-		toggleThermal.setChecked(thermal);
-		toggleThermal.setEnabled(supportThermal);
 
 		checkMasterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
@@ -92,7 +94,6 @@ public class MainActivity extends Activity {
 				spinnerProfile.setEnabled(isChecked);
 				if (isChecked) {
 					properties.setProperty("smooth_interactive", "enabled");
-					applySettings();
 				} else {
 					properties.setProperty("smooth_interactive", "disabled");
 					Toast.makeText(MainActivity.this, R.string.reboot_suggest, Toast.LENGTH_SHORT).show();
@@ -112,14 +113,12 @@ public class MainActivity extends Activity {
 					return;
 				}
 				properties.setProperty("interactive_profile", i + "");
-				applySettings();
 				saveProperties(MainActivity.this);
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
 				properties.setProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "");
-				applySettings();
 				saveProperties(MainActivity.this);
 			}
 		});
@@ -135,19 +134,15 @@ public class MainActivity extends Activity {
 					return;
 				}
 				if (i == 2) {
-					if (DynatweakService.instance != null)
-						DynatweakService.instance.stopThermal();
 					properties.setProperty("thermal_service", "disabled");
 				}
 				properties.setProperty("hotplug_profile", i + "");
-				applySettings();
 				saveProperties(MainActivity.this);
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
 				properties.setProperty("hotplug_profile", "0");
-				applySettings();
 				saveProperties(MainActivity.this);
 			}
 		});
@@ -159,13 +154,11 @@ public class MainActivity extends Activity {
 				Intent intent1 = new Intent(MainActivity.this, DynatweakService.class);
 				if (toggleService.isChecked()) {
 					toggleMonitor.setEnabled(true);
-					toggleThermal.setEnabled(supportThermal);
 					startService(intent1);
 					properties.setProperty("dynatweak_service", "enabled");
 				} else {
 					stopService(intent1);
 					toggleMonitor.setEnabled(false);
-					toggleThermal.setEnabled(false);
 					properties.setProperty("dynatweak_service", "disabled");
 				}
 				saveProperties(MainActivity.this);
@@ -188,26 +181,10 @@ public class MainActivity extends Activity {
 			}
 		});
 
-		toggleThermal.setOnClickListener(new View.OnClickListener() {
+		buttonApply.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				if (toggleThermal.isChecked()) {
-					if (supportThermal) {
-						if (spinnerHotplug.getSelectedItemPosition() == 2) {
-							spinnerHotplug.setSelection(0, true);
-							properties.setProperty("hotplug_profile", "0");
-							applySettings();
-						}
-						if (DynatweakService.instance != null)
-							DynatweakService.instance.startThermal();
-						properties.setProperty("thermal_service", "enabled");
-					}
-				} else {
-					if (DynatweakService.instance != null)
-						DynatweakService.instance.stopThermal();
-					properties.setProperty("thermal_service", "disabled");
-				}
-				saveProperties(MainActivity.this);
+				applySettings();
 			}
 		});
 	}
@@ -234,8 +211,8 @@ public class MainActivity extends Activity {
 }
 
 class ProgressHandler extends Handler {
-	private ProgressDialog tweaking;
 	private final Context context;
+	private ProgressDialog tweaking;
 
 	ProgressHandler(Context context) {
 		tweaking = ProgressDialog.show(context, "正在应用设置", "请稍候...");

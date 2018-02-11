@@ -28,11 +28,12 @@
                 android:text="@string/app_introduction"/>
 
             <CheckBox
-                    android:text="@string/app_master_switch"
+                android:id="@+id/checkMasterSwitch"
                     android:layout_width="match_parent"
-                    android:layout_marginTop="16dp"
+                android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:layout_height="wrap_content" android:id="@+id/checkMasterSwitch"/>
+                android:layout_marginTop="16dp"
+                android:text="@string/app_master_switch" />
 
             <TextView
                     android:layout_width="match_parent"
@@ -40,9 +41,9 @@
                     android:text="@string/app_device_profile"/>
 
             <Spinner
+                android:id="@+id/spinnerProfile"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:id="@+id/spinnerProfile"
                     android:layout_marginBottom="8dp"
                     android:layout_marginTop="8dp"
                     android:entries="@array/interactive_profile"/>
@@ -53,12 +54,18 @@
                     android:text="@string/app_hotplug_profile"/>
 
             <Spinner
+                android:id="@+id/spinnerHotplug"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:id="@+id/spinnerHotplug"
                     android:layout_marginBottom="8dp"
                     android:layout_marginTop="8dp"
                     android:entries="@array/hotplug_profile"/>
+
+            <Button
+                android:id="@+id/buttonApply"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/apply_settings" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -91,17 +98,6 @@
                 android:layout_marginBottom="8dp"
                 android:layout_marginTop="8dp"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/app_userspace_thermal"/>
-
-            <ToggleButton
-                android:id="@+id/toggleThermal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:layout_marginTop="8dp"/>
         </LinearLayout>
     </ScrollView>
 
