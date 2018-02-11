@@ -306,9 +306,7 @@ class Kernel {
 	}
 
 	void setNode(String path, String value) {
-		if (hasNode(path)) {
-			commands.add("echo '" + value + "'>'" + path + "'");
-		}
+		setNode(path, value, false);
 	}
 
 	private void setNode(String path, String value, boolean lock) {
