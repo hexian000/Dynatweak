@@ -238,7 +238,6 @@ class Kernel {
 					Log.d(LOG_TAG, "Found current scheduler - \"" + scheduler.substring(1, scheduler.length() - 1) + "\"");
 					ret.add(scheduler.substring(1, scheduler.length() - 2));
 				} else {
-					Log.d(LOG_TAG, "Found scheduler - \"" + scheduler + "\"");
 					ret.add(scheduler);
 				}
 			}
