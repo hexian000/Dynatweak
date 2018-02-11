@@ -235,8 +235,9 @@ class Kernel {
 			String[] schedulers = readNodeByRoot(node).trim().split(" +");
 			for (String scheduler : schedulers) {
 				if (scheduler.startsWith("[") && scheduler.endsWith("]")) {
-					Log.d(LOG_TAG, "Found current scheduler - \"" + scheduler.substring(1, scheduler.length() - 1) + "\"");
-					ret.add(scheduler.substring(1, scheduler.length() - 2));
+					scheduler = scheduler.substring(1, scheduler.length() - 1);
+					Log.d(LOG_TAG, "Found current scheduler - \"" + scheduler + "\"");
+					ret.add(scheduler);
 				} else {
 					ret.add(scheduler);
 				}
