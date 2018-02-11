@@ -466,7 +466,6 @@ public class BootReceiver extends BroadcastReceiver {
 				break;
 		}
 
-		k.releaseRoot();
 		Log.d(LOG_TAG, "Finished tweaking...");
 	}
 

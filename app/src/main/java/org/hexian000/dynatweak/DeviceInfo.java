@@ -40,7 +40,6 @@ class DeviceInfo {
 		if (tzBuild) {
 			nodes.add(new Sensors());
 		}
-		k.releaseRoot();
 	}
 
 	String getHtml() {

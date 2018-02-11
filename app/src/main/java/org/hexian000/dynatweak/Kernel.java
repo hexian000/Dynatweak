@@ -7,16 +7,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Scanner;
+
+import eu.chainfire.libsuperuser.Shell;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -30,17 +27,10 @@ class Kernel {
 	final List<CpuCore> cpuCores;
 	private final List<ClusterPolicy> clusterPolicies;
 	private String COMMAND_sysctl = "sysctl";
-	private String COMMAND_chmod = "chmod";
-	private Process root;
-	// private InputStream stderr;
-	private BufferedReader stdout;
-	private PrintStream exec;
 	private int raw_id;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
-	private Random rnd;
 
 	private Kernel() {
-		rnd = new Random();
 		raw_id = -1;
 		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
 		for (String node : raw_id_nodes) {
@@ -301,68 +291,38 @@ class Kernel {
 		}
 	}
 
-	private void changeMode(String path, String permission) {
-		try {
-			runAsRoot(COMMAND_chmod + " " + permission + " \'" + path + "\'");
-		} catch (IOException e) {
-			Log.w(LOG_TAG, "chmod failed", e);
-		}
-	}
-
 	String readNode(String path) throws IOException {
 		return new BufferedReader(new FileReader(path)).readLine();
 	}
 
-	String readNodeByRoot(String path) throws IOException {
-		acquireRoot();
-		final int id = rnd.nextInt();
-		final String start = "START " + id;
-		final String end = "END " + id;
-		exec.println("echo ''");
-		exec.println("echo '" + start + "'");
-		exec.println("cat '" + path + "'");
-		exec.println("echo ''");
-		exec.println("echo '" + end + "'");
-		exec.flush();
-		boolean started = false;
-		StringBuilder sb = new StringBuilder();
-		while (true) {
-			String line = stdout.readLine();
-			if (started) {
-				Log.d(LOG_TAG, "Find \"" + end + "\" got \"" + line + "\"");
-				if (end.equals(line)) {
-					break;
-				} else {
-					sb.append(line).append(System.lineSeparator());
-					return line;
-				}
-			} else {
-				Log.d(LOG_TAG, "Find \"" + start + "\" got \"" + line + "\"");
-				if (start.equals(line)) {
-					started = true;
-				}
-			}
+	private String readNodeByRoot(String path) throws IOException {
+		List<String> result = Shell.SU.run("cat '" + path + "'");
+		if (result != null && result.size() > 0) {
+			return result.get(0);
+		} else {
+			throw new IOException("readNodeByRoot failed");
 		}
-		return sb.toString();
 	}
 
 	private void setNode(String path, String value) throws IOException {
 		if (hasNode(path)) {
-			runAsRoot("echo '" + value + "'>'" + path + "'\n");
+			Shell.SU.run("echo '" + value + "'>'" + path + "'");
 		}
 	}
 
 	private void setNode(String path, String value, boolean lock) throws IOException {
 		if (hasNode(path)) {
 			if (lock) {
-				changeMode(path, "a+w");
-				setNode(path, value);
-				changeMode(path, "a-w");
+				Shell.SU.run(new String[]{
+						"chmod a+w '" + path + "'",
+						"echo '" + value + "'>'" + path + "'",
+						"chmod a-w '" + path + "'",
+				});
 			} else {
-				setNode(path, value);
+				Shell.SU.run("echo '" + value + "'>'" + path + "'");
 			}
 		} else {
-			Log.d(LOG_TAG, "node ignored: " + path + " = " + value);
+			Log.d(LOG_TAG, "node ignored: " + path + " = \"" + value + "\"");
 		}
 	}
 
@@ -393,97 +353,7 @@ class Kernel {
 
 	void runAsRoot(String command) throws IOException {
 		// Log.d(LOG_TAG, command);
-		acquireRoot();
-		exec.println(command);
-		exec.flush();
-	}
-
-	private void acquireRoot() throws IOException {
-		if (root == null) {
-			root = Runtime.getRuntime().exec("su");
-			exec = new PrintStream(root.getOutputStream());
-			stdout = new BufferedReader(new InputStreamReader(root.getInputStream()));
-
-			// Check busybox
-			InputStream stdout = root.getInputStream();
-			exec.println("busybox --list");
-			exec.println("echo -END-");
-			exec.println("exit");
-			exec.flush();
-			try {
-				root.waitFor();
-			} catch (InterruptedException ignored) {
-			}
-			BufferedReader isr = new BufferedReader(new InputStreamReader(stdout));
-			HashSet<String> applets = new HashSet<>();
-			while (stdout.available() > 0) {
-				String line = isr.readLine();
-				if (line.equals("-END-"))
-					break;
-				applets.add(line);
-			}
-			String rootCommand;
-			if (applets.contains("sh")) rootCommand = "su -c 'busybox sh'";
-			else {
-				rootCommand = "su";
-				if (applets.contains("chmod"))
-					COMMAND_chmod = "busybox chmod";
-				if (applets.contains("sysctl"))
-					COMMAND_sysctl = "busybox sysctl";
-			}
-			root = Runtime.getRuntime().exec(rootCommand);
-			exec = new PrintStream(root.getOutputStream());
-			// stderr = root.getErrorStream();
-		}
-	}
-
-	/*void logSu() throws IOException {
-	    exec.println("exit");
-		exec.flush();
-		try {
-			root.waitFor();
-		} catch (InterruptedException ignored) {
-		}
-		Log.d("ROOT", "Log SU:");
-		int len = stdout.available();
-		byte[] b;
-		if (len > 0) {
-			b = new byte[len];
-			stdout.read(b);
-			Log.d("ROOT", new String(b));
-		}
-		len = stderr.available();
-		if (len > 0) {
-			b = new byte[len];
-			stderr.read(b);
-			Log.wtf("ROOT", new String(b));
-		}
-		exec.close();
-		stdout.close();
-		stderr.close();
-		root = Runtime.getRuntime().exec("su");
-		exec = new PrintStream(root.getOutputStream());
-		stdout = root.getInputStream();
-		stderr = root.getErrorStream();
-	}*/
-
-	void releaseRoot() {
-		if (root != null) {
-			exec.println("exit");
-			exec.flush();
-			exec.close();
-			try {
-				root.waitFor();
-			} catch (InterruptedException ignore) {
-			}
-			try {
-				stdout.close();
-			} catch (IOException ignore) {
-			}
-			stdout = null;
-			exec = null;
-			root = null;
-		}
+		Shell.SU.run(command);
 	}
 
 	int getSocRawID() {
@@ -595,11 +465,6 @@ class Kernel {
 			}
 		}
 
-		/*int getScalingMinFrequency() throws IOException {
-            String ret = readNode(path + "/cpufreq/scaling_min_freq");
-			return Integer.parseInt(ret);
-		}*/
-
 		void setScalingMinFrequency(int frequency) {
 			trySetNode(path + "/cpufreq/scaling_min_freq", frequency + "");
 		}
@@ -620,7 +485,7 @@ class Kernel {
 		}
 
 		/*int getCurrentFrequency() throws IOException {
-            String ret = readNode(path + "/cpufreq/cpuinfo_cur_freq");
+		    String ret = readNode(path + "/cpufreq/cpuinfo_cur_freq");
 			return Integer.parseInt(ret);
 		}*/
 

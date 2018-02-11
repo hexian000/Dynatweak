@@ -126,7 +126,6 @@ public class DynatweakService extends Service {
 			deviceInfo = null;
 		}
 		instance = null;
-		k.releaseRoot();
 		super.onDestroy();
 	}
 
