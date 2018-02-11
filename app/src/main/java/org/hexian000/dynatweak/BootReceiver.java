@@ -89,10 +89,10 @@ public class BootReceiver extends BroadcastReceiver {
 					scheduler = "zen";
 				else if (schedulers.contains("bfq"))
 					scheduler = "bfq";
-				else if (schedulers.contains("deadline"))
-					scheduler = "deadline";
 				else if (schedulers.contains("cfq"))
 					scheduler = "cfq";
+				else if (schedulers.contains("deadline"))
+					scheduler = "deadline";
 				else if (schedulers.contains("noop"))
 					scheduler = "noop";
 				if (scheduler != null) {
