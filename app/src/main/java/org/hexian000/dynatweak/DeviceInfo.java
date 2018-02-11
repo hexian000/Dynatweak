@@ -351,7 +351,7 @@ class DeviceInfo {
 			int i = 0;
 			while (k.hasNode(path = k.getThermalZone(i))) {
 				try {
-					sensors.add(new MaxTempReader(k, path));
+					sensors.add(new MaxTempReader(path));
 				} catch (FileNotFoundException ignore) {
 				}
 				i++;

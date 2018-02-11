@@ -1,19 +1,12 @@
 package org.hexian000.dynatweak;
 
 import android.util.Log;
+import eu.chainfire.libsuperuser.Shell;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
-
-import eu.chainfire.libsuperuser.Shell;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -36,7 +29,6 @@ class Kernel {
 		for (String node : raw_id_nodes) {
 			try {
 				if (!hasNode(node)) continue;
-				// grantRead(node);
 				raw_id = Integer.parseInt(readNode(node));
 				break;
 			} catch (Throwable ignore) {
@@ -44,9 +36,9 @@ class Kernel {
 		}
 		try {
 			if (raw_id == 2375) { // Xiaomi Mi 5
-				batteryTemp = new AdaptiveTempReader(this, getThermalZone(22));
+				batteryTemp = new AdaptiveTempReader(getThermalZone(22));
 			} else {
-				batteryTemp = new AdaptiveTempReader(this, "/sys/class/power_supply/battery/temp");
+				batteryTemp = new AdaptiveTempReader("/sys/class/power_supply/battery/temp");
 			}
 		} catch (Throwable ignore) {
 		}
@@ -56,57 +48,57 @@ class Kernel {
 			case 1973:
 			case 1974:  // Xiaomi Mi 3/4/Note
 				try {
-					socTemp = new AdaptiveTempReader(this, getThermalZone(0));
+					socTemp = new AdaptiveTempReader(getThermalZone(0));
 				} catch (Throwable ignore) {
 				}
 				try {
-					gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
+					gpuTemp = new AdaptiveTempReader(getThermalZone(10));
 				} catch (Throwable ignore) {
 				}
 				break;
 			case 1812:  // Xiaomi Mi 2/2S
 				try {
-					socTemp = new AdaptiveTempReader(this, getThermalZone(0));
+					socTemp = new AdaptiveTempReader(getThermalZone(0));
 				} catch (Throwable ignore) {
 				}
 				try {
-					gpuTemp = new AdaptiveTempReader(this, getThermalZone(2));
+					gpuTemp = new AdaptiveTempReader(getThermalZone(2));
 				} catch (Throwable ignore) {
 				}
 				break;
 			case 94:  // ONEPLUS A5000
 				try {
-					socTemp = new AdaptiveTempReader(this, getThermalZone(1));
+					socTemp = new AdaptiveTempReader(getThermalZone(1));
 				} catch (Throwable ignore) {
 				}
 				try {
-					gpuTemp = new AdaptiveTempReader(this, getThermalZone(20));
+					gpuTemp = new AdaptiveTempReader(getThermalZone(20));
 				} catch (Throwable ignore) {
 				}
 				break;
 			case 95:  // ONEPLUS A3010
 				try {
-					socTemp = new AdaptiveTempReader(this, getThermalZone(22));
+					socTemp = new AdaptiveTempReader(getThermalZone(22));
 				} catch (Throwable ignore) {
 				}
 				try {
-					gpuTemp = new AdaptiveTempReader(this, getThermalZone(10));
+					gpuTemp = new AdaptiveTempReader(getThermalZone(10));
 				} catch (Throwable ignore) {
 				}
 				break;
 			case 2375:  // Xiaomi Mi 5
 				try {
-					socTemp = new AdaptiveTempReader(this, getThermalZone(1));
+					socTemp = new AdaptiveTempReader(getThermalZone(1));
 				} catch (Throwable ignore) {
 				}
 				try {
-					gpuTemp = new AdaptiveTempReader(this, getThermalZone(16));
+					gpuTemp = new AdaptiveTempReader(getThermalZone(16));
 				} catch (Throwable ignore) {
 				}
 				break;
 			case 70:  // Xiaomi Mi 5X
 				try {
-					socTemp = new AdaptiveTempReader(this, getThermalZone(20));
+					socTemp = new AdaptiveTempReader(getThermalZone(20));
 				} catch (Throwable ignore) {
 				}
 				gpuTemp = null;
@@ -238,16 +230,18 @@ class Kernel {
 	List<String> listBlockAvailableScheduler(String node) {
 		List<String> ret = new ArrayList<>();
 		try {
-			Scanner sc = new Scanner(new File(node));
-			while (sc.hasNext()) {
-				String scheduler = sc.next().trim();
+			String[] schedulers = readNodeByRoot(node).trim().split(" +");
+			for (String scheduler : schedulers) {
 				if (scheduler.startsWith("[") && scheduler.endsWith("]")) {
-					ret.add(scheduler.substring(1, scheduler.length() - 3));
+					Log.d(LOG_TAG, "Found current scheduler - \"" + scheduler.substring(1, scheduler.length() - 1) + "\"");
+					ret.add(scheduler.substring(1, scheduler.length() - 2));
 				} else {
+					Log.d(LOG_TAG, "Found scheduler - \"" + scheduler + "\"");
 					ret.add(scheduler);
 				}
 			}
-		} catch (Throwable ignore) {
+		} catch (Throwable ex) {
+			Log.e(LOG_TAG, "listBlockAvailableScheduler", ex);
 		}
 		return ret;
 	}
@@ -282,7 +276,7 @@ class Kernel {
 		return hasNode("/sys/module/msm_thermal/core_control/enabled") || hasNode("/sys/module/msm_thermal/core_control/cpus_offlined");
 	}
 
-	void setCoreControlMask(int mask) throws IOException {
+	void setCoreControlMask(int mask) {
 		if (mask > 0) {
 			setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
 			setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "", true);
@@ -295,22 +289,23 @@ class Kernel {
 		return new BufferedReader(new FileReader(path)).readLine();
 	}
 
-	private String readNodeByRoot(String path) throws IOException {
+	private String readNodeByRoot(String path) {
 		List<String> result = Shell.SU.run("cat '" + path + "'");
 		if (result != null && result.size() > 0) {
 			return result.get(0);
 		} else {
-			throw new IOException("readNodeByRoot failed");
+			Log.w(LOG_TAG, "readNodeByRoot got nothing - \"" + path + "\"");
+			return "";
 		}
 	}
 
-	private void setNode(String path, String value) throws IOException {
+	void setNode(String path, String value) {
 		if (hasNode(path)) {
 			Shell.SU.run("echo '" + value + "'>'" + path + "'");
 		}
 	}
 
-	private void setNode(String path, String value, boolean lock) throws IOException {
+	private void setNode(String path, String value, boolean lock) {
 		if (hasNode(path)) {
 			if (lock) {
 				Shell.SU.run(new String[]{
@@ -343,15 +338,11 @@ class Kernel {
 	}
 
 	void setSysctl(String node, String value) {
-		try {
-			if (!trySetNode("/proc/sys/" + node.replace('.', '/'), value))
-				runAsRoot(COMMAND_sysctl + " -w " + node + "=" + value);
-		} catch (IOException e) {
-			Log.w(LOG_TAG, "setSysctl failed", e);
-		}
+		if (!trySetNode("/proc/sys/" + node.replace('.', '/'), value))
+			runAsRoot(COMMAND_sysctl + " -w " + node + "=" + value);
 	}
 
-	void runAsRoot(String command) throws IOException {
+	void runAsRoot(String command) {
 		// Log.d(LOG_TAG, command);
 		Shell.SU.run(command);
 	}
@@ -395,7 +386,7 @@ class Kernel {
 			if (tempNode != null) {
 				// grantRead(tempNode);
 				try {
-					this.tempNode = new AdaptiveTempReader(Kernel.this, tempNode);
+					this.tempNode = new AdaptiveTempReader(tempNode);
 				} catch (Throwable ignore) {
 				}
 			}
@@ -451,13 +442,7 @@ class Kernel {
 					* percentage));
 		}
 
-
-		/*int getScalingMaxFrequency() throws IOException {
-		    String ret = readNode(path + "/cpufreq/scaling_max_freq");
-			return Integer.parseInt(ret);
-		}*/
-
-		void setScalingMaxFrequency(int frequency, boolean locked) throws IOException {
+		void setScalingMaxFrequency(int frequency, boolean locked) {
 			if (locked) {
 				setNode(path + "/cpufreq/scaling_max_freq", frequency + "", true);
 			} else {
@@ -484,11 +469,6 @@ class Kernel {
 			return Integer.parseInt(ret);
 		}
 
-		/*int getCurrentFrequency() throws IOException {
-		    String ret = readNode(path + "/cpufreq/cpuinfo_cur_freq");
-			return Integer.parseInt(ret);
-		}*/
-
 		void trySetGovernor(String governor) {
 			trySetNode(path + "/cpufreq/scaling_governor", governor);
 		}
@@ -504,7 +484,7 @@ class Kernel {
 			return ret;
 		}
 
-		void setOnline(boolean online, boolean locked) throws IOException {
+		void setOnline(boolean online, boolean locked) {
 			if (online)
 				for (int putOnline = 0; putOnline < 10; putOnline++) {
 					setNode(path + "/online", "1", locked);
@@ -523,10 +503,6 @@ class Kernel {
 			return readNode(path + "/cpufreq/scaling_governor");
 		}
 
-		/*String getRunQueueAverage() throws IOException {
-			return readNode(path + "/rq-stat/run_queue_avg");
-		}*/
-
 		boolean hasTemperature() {
 			return tempNode != null;
 		}
@@ -541,9 +517,8 @@ class AdaptiveTempReader {
 	private double divider;
 	private RandomAccessFile fr;
 
-	AdaptiveTempReader(Kernel k, String node) throws FileNotFoundException {
+	AdaptiveTempReader(String node) throws FileNotFoundException {
 		try {
-			// k.grantRead(node);
 			fr = new RandomAccessFile(node, "r");
 			divider = 1.0;
 			read();
@@ -569,8 +544,8 @@ class MaxTempReader extends AdaptiveTempReader {
 
 	private double max = 0;
 
-	MaxTempReader(Kernel k, String node) throws FileNotFoundException {
-		super(k, node);
+	MaxTempReader(String node) throws FileNotFoundException {
+		super(node);
 	}
 
 	double read() throws IOException {

@@ -99,7 +99,7 @@ public class BootReceiver extends BroadcastReceiver {
 				else if (schedulers.contains("noop"))
 					scheduler = "noop";
 				if (scheduler != null) {
-					k.trySetNode(i + "/queue/scheduler", scheduler);
+					k.setNode(i + "/queue/scheduler", scheduler);
 				}
 			}
 		}
