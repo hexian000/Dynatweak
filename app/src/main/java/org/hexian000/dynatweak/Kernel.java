@@ -2,8 +2,21 @@ package org.hexian000.dynatweak;
 
 import android.util.Log;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -288,10 +301,6 @@ class Kernel {
 		}
 	}
 
-	void grantRead(String path) {
-		changeMode(path, "a+r");
-	}
-
 	private void changeMode(String path, String permission) {
 		try {
 			runAsRoot(COMMAND_chmod + " " + permission + " \'" + path + "\'");
@@ -517,20 +526,6 @@ class Kernel {
 			}
 			this.path = path + "/cpu" + id;
 			this.id = id;
-			// grantRequiredPermissions();
-		}
-
-		void grantRequiredPermissions() {
-			changeMode(this.path + "/online", "0644");
-			changeMode(this.path + "/cpufreq/scaling_max_freq", "0644");
-			changeMode(this.path + "/cpufreq/scaling_min_freq", "0644");
-			changeMode(this.path + "/cpufreq/scaling_governor", "0644");
-			grantRead(this.path + "/cpufreq/scaling_available_frequencies");
-			grantRead(this.path + "/cpufreq/scaling_available_governors");
-			grantRead(this.path + "/cpufreq/scaling_cur_freq");
-			grantRead(this.path + "/cpufreq/cpuinfo_max_freq");
-			grantRead(this.path + "/cpufreq/cpuinfo_min_freq");
-			grantRead(this.path + "/cpufreq/cpuinfo_cur_freq");
 		}
 
 		int getId() {

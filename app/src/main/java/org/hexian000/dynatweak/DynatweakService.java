@@ -183,7 +183,6 @@ public class DynatweakService extends Service {
 	}
 
 	class RefreshTask extends TimerTask {
-
 		@Override
 		public void run() {
 			handler.post(new Runnable() {

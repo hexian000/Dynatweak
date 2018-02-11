@@ -195,7 +195,6 @@ public class BootReceiver extends BroadcastReceiver {
 						tweakGovernor(k, cpu, cpu.getPath() + "/cpufreq",
 								governor.get(cpu.getCluster()), profiles.get(cpu.getCluster()));
 					}
-					cpu.grantRequiredPermissions();
 					break;
 				} catch (Throwable ignore) {
 				}
@@ -1138,6 +1137,9 @@ public class BootReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		if (!"BOOT_COMPLETED".equals(intent.getAction())) {
+			return;
+		}
 		try {
 			MainActivity.loadProperties(context);
 			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
