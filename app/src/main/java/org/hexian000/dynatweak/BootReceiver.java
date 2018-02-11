@@ -63,7 +63,7 @@ public class BootReceiver extends BroadcastReceiver {
 		// IO
 		List<String> block = k.listBlockDevices();
 		for (String i : block) {
-			Log.i(Kernel.LOG_TAG, "block device: " + i + " detected");
+			Log.i(Kernel.LOG_TAG, "block device detected: " + i);
 			if (k.hasNode(i + "/queue/iostats") &&
 					k.hasNode(i + "/queue/add_random") &&
 					k.hasNode(i + "/queue/read_ahead_kb") &&
