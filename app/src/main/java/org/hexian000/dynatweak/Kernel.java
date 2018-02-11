@@ -19,11 +19,13 @@ class Kernel {
 	private static Kernel instance = null;
 	final List<CpuCore> cpuCores;
 	private final List<ClusterPolicy> clusterPolicies;
+	private List<String> commands;
 	private String COMMAND_sysctl = "sysctl";
 	private int raw_id;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	private Kernel() {
+		commands = new ArrayList<>();
 		raw_id = -1;
 		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
 		for (String node : raw_id_nodes) {
@@ -166,7 +168,7 @@ class Kernel {
 			try {
 				String policy = "/sys/devices/system/cpu/cpufreq/policy" + cpu.getId();
 				if (!hasNode(policy)) policy = null;
-				String[] raw = readNode(policy + "/affected_cpus").split(" ");
+				String[] raw = readNodeByRoot(policy + "/affected_cpus").split(" +");
 				int[] affected_cpus = new int[raw.length];
 				int i = 0;
 				for (String raw_id : raw) {
@@ -299,22 +301,25 @@ class Kernel {
 		}
 	}
 
+	void commit() {
+		Shell.SU.run(commands);
+		commands = new ArrayList<>();
+	}
+
 	void setNode(String path, String value) {
 		if (hasNode(path)) {
-			Shell.SU.run("echo '" + value + "'>'" + path + "'");
+			commands.add("echo '" + value + "'>'" + path + "'");
 		}
 	}
 
 	private void setNode(String path, String value, boolean lock) {
 		if (hasNode(path)) {
 			if (lock) {
-				Shell.SU.run(new String[]{
-						"chmod a+w '" + path + "'",
-						"echo '" + value + "'>'" + path + "'",
-						"chmod a-w '" + path + "'",
-				});
+				commands.add("chmod +w '" + path + "'");
+				commands.add("echo '" + value + "'>'" + path + "'");
+				commands.add("chmod -w '" + path + "'");
 			} else {
-				Shell.SU.run("echo '" + value + "'>'" + path + "'");
+				commands.add("echo '" + value + "'>'" + path + "'");
 			}
 		} else {
 			Log.d(LOG_TAG, "node ignored: " + path + " = \"" + value + "\"");
@@ -339,7 +344,7 @@ class Kernel {
 
 	void setSysctl(String node, String value) {
 		if (!trySetNode("/proc/sys/" + node.replace('.', '/'), value))
-			runAsRoot(COMMAND_sysctl + " -w " + node + "=" + value);
+			commands.add(COMMAND_sysctl + " -w " + node + "=" + value);
 	}
 
 	void runAsRoot(String command) {
