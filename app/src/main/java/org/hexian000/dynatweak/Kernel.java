@@ -329,14 +329,18 @@ class Kernel {
 		while (true) {
 			String line = stdout.readLine();
 			if (started) {
+				Log.d(LOG_TAG, "Find \"" + end + "\" got \"" + line + "\"");
 				if (end.equals(line)) {
 					break;
 				} else {
 					sb.append(line).append(System.lineSeparator());
 					return line;
 				}
-			} else if (start.equals(line)) {
-				started = true;
+			} else {
+				Log.d(LOG_TAG, "Find \"" + start + "\" got \"" + line + "\"");
+				if (start.equals(line)) {
+					started = true;
+				}
 			}
 		}
 		return sb.toString();
@@ -366,11 +370,11 @@ class Kernel {
 		if (hasNode(node)) {
 			try {
 				setNode(node, value);
-				String nowValue = readNode(node);
+				String nowValue = readNodeByRoot(node);
 				if (nowValue.equals(value))
 					return true;
 				else
-					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = " + nowValue);
+					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = \"" + nowValue + "\"");
 			} catch (Throwable e) {
 				Log.w(LOG_TAG, "trySetNode failed: " + node, e);
 			}
@@ -579,7 +583,7 @@ class Kernel {
 
 
 		/*int getScalingMaxFrequency() throws IOException {
-            String ret = readNode(path + "/cpufreq/scaling_max_freq");
+		    String ret = readNode(path + "/cpufreq/scaling_max_freq");
 			return Integer.parseInt(ret);
 		}*/
 
