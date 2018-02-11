@@ -17,9 +17,7 @@
         <item>使用热插拔驱动（需要内核支持）</item>
     </string-array>
     <string name="app_additional_functions">- 附加功能 -</string>
-    <string name="app_service">Dynatweak 服务总开关（需要后台运行）：\n下面的功能都依赖于此服务，关闭此服务Dynatweak将没有任何后台活动</string>
-    <string name="app_monitor_overlay">监视悬浮窗</string>
-    <string name="app_userspace_thermal">使用Dynatweak服务进行温控，降低手机发热，避免过热重启，与热插拔驱动不兼容</string>
+    <string name="app_service">Dynatweak 监视悬浮窗（需要后台运行）</string>
     <string name="kernel_unsupported">不支持的内核或未授予root权限</string>
     <string name="operation_success">操作成功</string>
     <string name="operation_failed">操作失败</string>

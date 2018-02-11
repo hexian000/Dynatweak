@@ -20,10 +20,12 @@ import android.widget.ToggleButton;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.hexian000.dynatweak.Kernel.LOG_TAG;
+
 public class MainActivity extends Activity {
 	private static final String PREFERENCES_FILE_NAME = "preferences";
 	static Properties properties = null;
-	private ToggleButton toggleService, toggleMonitor;
+	private ToggleButton toggleService;
 	private Spinner spinnerProfile, spinnerHotplug;
 
 	static void loadProperties(Context context) {
@@ -31,7 +33,8 @@ public class MainActivity extends Activity {
 			MainActivity.properties = new Properties();
 			try {
 				MainActivity.properties.load(context.openFileInput("preferences"));
-			} catch (IOException ignore) {
+			} catch (IOException ex) {
+				Log.e(LOG_TAG, "Error loading properties", ex);
 			}
 		}
 	}
@@ -39,7 +42,8 @@ public class MainActivity extends Activity {
 	private static void saveProperties(Context context) {
 		try {
 			properties.store(context.openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE), null);
-		} catch (IOException ignore) {
+		} catch (IOException ex) {
+			Log.e(LOG_TAG, "Error loading properties", ex);
 		}
 	}
 
@@ -58,7 +62,7 @@ public class MainActivity extends Activity {
 				return;
 			}
 		} catch (Throwable e) {
-			Log.d(Kernel.LOG_TAG, "Unsupported", e);
+			Log.d(LOG_TAG, "Unsupported", e);
 			Toast.makeText(this, R.string.kernel_unsupported, Toast.LENGTH_SHORT).show();
 			finish();
 			return;
@@ -69,7 +73,6 @@ public class MainActivity extends Activity {
 		spinnerProfile = findViewById(R.id.spinnerProfile);
 		spinnerHotplug = findViewById(R.id.spinnerHotplug);
 		toggleService = findViewById(R.id.toggleService);
-		toggleMonitor = findViewById(R.id.toggleMonitor);
 		Button buttonApply = findViewById(R.id.buttonApply);
 
 		// 加载设置
@@ -84,8 +87,6 @@ public class MainActivity extends Activity {
 			startService(new Intent(this, DynatweakService.class));
 		if (!service && DynatweakService.instance != null)
 			stopService(new Intent(this, DynatweakService.class));
-		boolean monitor = properties.getProperty("monitor_service", "disabled").equals("enabled");
-		toggleMonitor.setChecked(monitor);
 
 		checkMasterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
@@ -153,29 +154,11 @@ public class MainActivity extends Activity {
 			public void onClick(View view) {
 				Intent intent1 = new Intent(MainActivity.this, DynatweakService.class);
 				if (toggleService.isChecked()) {
-					toggleMonitor.setEnabled(true);
 					startService(intent1);
 					properties.setProperty("dynatweak_service", "enabled");
 				} else {
 					stopService(intent1);
-					toggleMonitor.setEnabled(false);
 					properties.setProperty("dynatweak_service", "disabled");
-				}
-				saveProperties(MainActivity.this);
-			}
-		});
-
-		toggleMonitor.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				if (toggleMonitor.isChecked()) {
-					if (DynatweakService.instance != null)
-						DynatweakService.instance.showMonitor();
-					properties.setProperty("monitor_service", "enabled");
-				} else {
-					if (DynatweakService.instance != null)
-						DynatweakService.instance.hideMonitor();
-					properties.setProperty("monitor_service", "disabled");
 				}
 				saveProperties(MainActivity.this);
 			}
@@ -201,7 +184,7 @@ public class MainActivity extends Activity {
 					BootReceiver.tweak(hotplug_profile, profile);
 					msg.what = 0;
 				} catch (Throwable e) {
-					Log.e(Kernel.LOG_TAG, "MainActivity.applySettings()", e);
+					Log.e(LOG_TAG, "MainActivity.applySettings()", e);
 					msg.what = 1;
 				}
 				handler.sendMessage(msg);

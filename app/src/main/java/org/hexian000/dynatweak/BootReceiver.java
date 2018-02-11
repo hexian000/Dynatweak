@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hexian000.dynatweak.Kernel.LOG_TAG;
+
 /**
  * Created by hexian on 2017/6/18.
  * Boot time tweaks
@@ -26,6 +28,7 @@ public class BootReceiver extends BroadcastReceiver {
 	private static final int HOTPLUG_DRIVER = 2;
 
 	static void tweak(int hotplug, int profile) throws IOException {
+		Log.d(LOG_TAG, "Start tweaking...");
 		Kernel k = Kernel.getInstance();
 		Kernel.CpuCore cpu0 = k.cpuCores.get(0);
 
@@ -63,7 +66,7 @@ public class BootReceiver extends BroadcastReceiver {
 		// IO
 		List<String> block = k.listBlockDevices();
 		for (String i : block) {
-			Log.i(Kernel.LOG_TAG, "block device detected: " + i);
+			Log.i(LOG_TAG, "block device detected: " + i);
 			if (k.hasNode(i + "/queue/iostats") &&
 					k.hasNode(i + "/queue/add_random") &&
 					k.hasNode(i + "/queue/read_ahead_kb") &&
@@ -108,7 +111,7 @@ public class BootReceiver extends BroadcastReceiver {
 		final boolean multiCluster = allPolicy.size() > 1;
 
 		if (!multiCluster) { // 单簇处理器
-			Log.d(Kernel.LOG_TAG, "single-cluster profile=" + profile);
+			Log.d(LOG_TAG, "single-cluster profile=" + profile);
 			switch (profile) {
 				case PROFILE_DISABLED:
 					break;
@@ -135,7 +138,7 @@ public class BootReceiver extends BroadcastReceiver {
 			}
 			profiles.add(profile);
 		} else { // 多簇处理器
-			Log.d(Kernel.LOG_TAG, "multi-cluster profile=" + profile);
+			Log.d(LOG_TAG, "multi-cluster profile=" + profile);
 			for (int i = 0; i < allPolicy.size(); i++) {
 				switch (profile) {
 					case PROFILE_DISABLED:
@@ -188,7 +191,7 @@ public class BootReceiver extends BroadcastReceiver {
 					// Per cpu governor tweak
 					if (profile != PROFILE_DISABLED) {
 						cpu.trySetGovernor(governor.get(cpu.getCluster()));
-						Log.d(Kernel.LOG_TAG, "tweaking cpu " + cpu.getId() +
+						Log.d(LOG_TAG, "tweaking cpu " + cpu.getId() +
 								": governor=" + governor.get(cpu.getCluster()) +
 								", profile=" + profiles.get(cpu.getCluster()) +
 								", path=" + cpu.getPath() + "/cpufreq");
@@ -205,12 +208,12 @@ public class BootReceiver extends BroadcastReceiver {
 		for (int i = 0; i < allPolicy.size(); i++) {
 			Kernel.ClusterPolicy clusterPolicy = allPolicy.get(i);
 			if (profile != PROFILE_DISABLED)
-				Log.d(Kernel.LOG_TAG, "tweaking cluster " + i +
+				Log.d(LOG_TAG, "tweaking cluster " + i +
 						": governor=" + governor.get(i) + ", profile=" + profiles.get(i));
 			Kernel.CpuCore cpu = k.cpuCores.get(clusterPolicy.getStartCpu());
 			// Qualcomm core control
 			if (k.hasNode(cpu.getPath() + "/core_ctl")) {
-				Log.i(Kernel.LOG_TAG, "policy" + i + ": core_ctl detected");
+				Log.i(LOG_TAG, "policy" + i + ": core_ctl detected");
 				k.trySetNode(cpu.getPath() + "/core_ctl/max_cpus", clusterPolicy.getCpuCount() + "");
 				k.trySetNode(cpu.getPath() + "/core_ctl/offline_delay_ms", "100");
 				if (!k.readNode(cpu.getPath() + "/core_ctl/is_big_cluster").equals("0")) {
@@ -307,7 +310,7 @@ public class BootReceiver extends BroadcastReceiver {
 
 		// MSM Performance
 		if (k.hasNode("/sys/module/msm_performance/parameters")) {
-			Log.i(Kernel.LOG_TAG, "msm_performance detected");
+			Log.i(LOG_TAG, "msm_performance detected");
 			final String msm_performance = "/sys/module/msm_performance/parameters/";
 			StringBuilder cpu_max_freq = new StringBuilder();
 			StringBuilder cpu_min_freq = new StringBuilder();
@@ -464,6 +467,7 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		k.releaseRoot();
+		Log.d(LOG_TAG, "Finished tweaking...");
 	}
 
 	private static String preferGovernor(List<String> allGovernors, String[] names) {
@@ -1136,7 +1140,10 @@ public class BootReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (!"BOOT_COMPLETED".equals(intent.getAction())) {
+		Log.d(LOG_TAG, "Boot receiver fired");
+		String action = intent.getAction();
+		if (!"android.intent.action.BOOT_COMPLETED".equals(action)) {
+			Log.w(LOG_TAG, "Wrong intent action - \"" + action + "\"");
 			return;
 		}
 		try {

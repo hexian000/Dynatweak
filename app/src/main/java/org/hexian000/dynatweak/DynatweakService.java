@@ -97,9 +97,7 @@ public class DynatweakService extends Service {
 			filter.addAction(Intent.ACTION_SCREEN_OFF);
 			registerReceiver(eventListener, filter);
 		}
-		MainActivity.loadProperties(this);
-		boolean monitor = MainActivity.properties.getProperty("monitor_service", "disabled").equals("enabled");
-		if (monitor) showMonitor();
+		showMonitor();
 		instance = this;
 		return START_STICKY;
 	}
