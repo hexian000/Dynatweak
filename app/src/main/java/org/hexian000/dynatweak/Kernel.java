@@ -274,7 +274,8 @@ class Kernel {
 	}
 
 	boolean hasCoreControl() {
-		return hasNode("/sys/module/msm_thermal/core_control/enabled") || hasNode("/sys/module/msm_thermal/core_control/cpus_offlined");
+		return hasNode("/sys/module/msm_thermal/core_control/enabled") ||
+				hasNode("/sys/module/msm_thermal/core_control/cpus_offlined");
 	}
 
 	void setCoreControlMask(int mask) {
@@ -442,20 +443,17 @@ class Kernel {
 			if (scaling_available_frequencies == null) {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
-			return fitFrequency((int) (scaling_available_frequencies.get(scaling_available_frequencies.size() - 1)
+			return fitFrequency((int) (scaling_available_frequencies.
+					get(scaling_available_frequencies.size() - 1)
 					* percentage));
 		}
 
-		void setScalingMaxFrequency(int frequency, boolean locked) {
-			if (locked) {
-				setNode(path + "/cpufreq/scaling_max_freq", frequency + "", true);
-			} else {
-				trySetNode(path + "/cpufreq/scaling_max_freq", frequency + "");
-			}
+		void setScalingMaxFrequency(int frequency) {
+			setNode(path + "/cpufreq/scaling_max_freq", frequency + "");
 		}
 
 		void setScalingMinFrequency(int frequency) {
-			trySetNode(path + "/cpufreq/scaling_min_freq", frequency + "");
+			setNode(path + "/cpufreq/scaling_min_freq", frequency + "");
 		}
 
 		int getScalingCurrentFrequency() throws IOException {

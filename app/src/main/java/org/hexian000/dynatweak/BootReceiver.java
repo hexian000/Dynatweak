@@ -187,7 +187,7 @@ public class BootReceiver extends BroadcastReceiver {
 				try {
 					cpu.setOnline(true, false);
 					cpu.setScalingMinFrequency(cpu.getMinFrequency());
-					cpu.setScalingMaxFrequency(cpu.getMaxFrequency(), false);
+					cpu.setScalingMaxFrequency(cpu.getMaxFrequency());
 					// Per cpu governor tweak
 					if (profile != PROFILE_DISABLED) {
 						cpu.trySetGovernor(governor.get(cpu.getCluster()));
