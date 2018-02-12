@@ -20,7 +20,6 @@ class Kernel {
 	final List<CpuCore> cpuCores;
 	private final List<ClusterPolicy> clusterPolicies;
 	private List<String> commands;
-	private String COMMAND_sysctl = "sysctl";
 	private int raw_id;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
@@ -311,16 +310,14 @@ class Kernel {
 	}
 
 	private void setNode(String path, String value, boolean lock) {
-		if (hasNode(path)) {
-			if (lock) {
-				commands.add("chmod +w '" + path + "'");
-				commands.add("echo '" + value + "'>'" + path + "'");
-				commands.add("chmod -w '" + path + "'");
-			} else {
-				commands.add("echo '" + value + "'>'" + path + "'");
-			}
+		if (lock) {
+			commands.add("[ -f '" + path + "' ] && " +
+					"chmod +w '" + path + "' && " +
+					"( echo '" + value + "'>'" + path + "' ; " +
+					"chmod -w '" + path + "' )");
 		} else {
-			Log.d(LOG_TAG, "node ignored: " + path + " = \"" + value + "\"");
+			commands.add("[ -f '" + path + "' ] && " +
+					"echo '" + value + "'>'" + path + "'");
 		}
 	}
 
@@ -341,8 +338,9 @@ class Kernel {
 	}
 
 	void setSysctl(String node, String value) {
-		if (!trySetNode("/proc/sys/" + node.replace('.', '/'), value))
-			commands.add(COMMAND_sysctl + " -w " + node + "=" + value);
+		String path = "/proc/sys/" + node.replace('.', '/');
+		commands.add("( [ -f '" + path + "' ] && echo '" + value + "' > " + path + " ) || " +
+				"( [ ! -z `which sysctl` ] && sysctl -w " + node + "=" + value + " )");
 	}
 
 	void runAsRoot(String command) {
