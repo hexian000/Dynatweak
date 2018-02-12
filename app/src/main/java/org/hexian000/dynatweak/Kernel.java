@@ -301,7 +301,11 @@ class Kernel {
 	}
 
 	void commit() {
-		Shell.SU.run(commands);
+		Log.d(LOG_TAG, "Committing " + commands.size() + " lines...");
+		List<String> result = Shell.SU.run(commands);
+		for (String line : result) {
+			Log.d(LOG_TAG, "STDOUT: " + line);
+		}
 		commands = new ArrayList<>();
 	}
 
