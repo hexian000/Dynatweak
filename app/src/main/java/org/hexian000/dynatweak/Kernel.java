@@ -323,16 +323,15 @@ class Kernel {
 
 	boolean trySetNode(String node, String value) {
 		if (hasNode(node)) {
-			try {
-				setNode(node, value);
-				String nowValue = readNodeByRoot(node);
-				if (nowValue.equals(value))
-					return true;
-				else
-					Log.w(LOG_TAG, "trySetNode mismatch: " + node + " = \"" + nowValue + "\"");
-			} catch (Throwable e) {
-				Log.w(LOG_TAG, "trySetNode failed: " + node, e);
-			}
+			List<String> result = Shell.SU.run("echo '" + value + "'>'" + node + "' ; cat '" + node + "'");
+			if (result.size() > 0 && result.get(0).equals(value))
+				return true;
+			else
+				Log.w(LOG_TAG, "trySetNode " + node +
+						" got: \"" + result.get(0) +
+						"\" expected: \"" + value + "\"");
+		} else {
+			Log.w(LOG_TAG, "trySetNode not found: " + node);
 		}
 		return false;
 	}
