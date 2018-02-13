@@ -19,6 +19,6 @@ android {
 }
 
 dependencies {
-    compile 'eu.chainfire:libsuperuser:1.0.0.+'
+    compile 'eu.chainfire:libsuperuser:1.0.0.201704021214'
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
