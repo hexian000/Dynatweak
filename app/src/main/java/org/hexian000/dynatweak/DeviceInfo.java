@@ -109,7 +109,7 @@ class DeviceInfo {
 				String data;
 				{
 					stat.seek(0);
-					byte[] buf = new byte[2048];
+					byte[] buf = new byte[4096];
 					int read = stat.read(buf);
 					data = new String(buf, 0, read);
 				}
