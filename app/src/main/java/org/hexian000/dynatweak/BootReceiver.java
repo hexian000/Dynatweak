@@ -1159,6 +1159,7 @@ public class BootReceiver extends BroadcastReceiver {
 			if (config.getProperty("smooth_interactive", "disabled").equals("enabled")) {
 				final int profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
 				final int hotplug = Integer.parseInt(config.getProperty("interactive_profile", "1"));
+				final TweakFinishedHandler handler = new TweakFinishedHandler(appContext, true);
 				new Thread() {
 					@Override
 					public void run() {
@@ -1170,8 +1171,7 @@ public class BootReceiver extends BroadcastReceiver {
 							Log.e(LOG_TAG, "Boot tweak async failed", e);
 							msg.what = 1;
 						}
-						new TweakFinishedHandler(appContext, true).
-								sendMessage(msg);
+						handler.sendMessage(msg);
 					}
 				}.start();
 			}
