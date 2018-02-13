@@ -20,7 +20,6 @@ public class MainActivity extends Activity {
 	private static final String PREFERENCES_FILE_NAME = "preferences";
 	static Properties properties = null;
 	private ToggleButton toggleService;
-	private Spinner spinnerProfile, spinnerHotplug;
 
 	static void loadProperties(Context context) {
 		if (MainActivity.properties == null) {
@@ -63,9 +62,9 @@ public class MainActivity extends Activity {
 		}
 
 		// 初始化控件
-		CheckBox checkBootTweak = findViewById(R.id.checkMasterSwitch);
-		spinnerProfile = findViewById(R.id.spinnerProfile);
-		spinnerHotplug = findViewById(R.id.spinnerHotplug);
+		final CheckBox checkBootTweak = findViewById(R.id.checkMasterSwitch);
+		final Spinner spinnerProfile = findViewById(R.id.spinnerProfile);
+		final Spinner spinnerHotplug = findViewById(R.id.spinnerHotplug);
 		toggleService = findViewById(R.id.toggleService);
 		Button buttonApply = findViewById(R.id.buttonApply);
 
