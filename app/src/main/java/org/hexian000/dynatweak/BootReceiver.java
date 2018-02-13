@@ -1139,9 +1139,9 @@ public class BootReceiver extends BroadcastReceiver {
 	}
 
 	@Override
-	public void onReceive(Context context, Intent intent) {
+	public void onReceive(final Context context, Intent intent) {
 		Log.d(LOG_TAG, "Boot receiver fired");
-		String action = intent.getAction();
+		final String action = intent.getAction();
 		if (!"android.intent.action.BOOT_COMPLETED".equals(action)) {
 			Log.w(LOG_TAG, "Wrong intent action - \"" + action + "\"");
 			return;
@@ -1149,19 +1149,27 @@ public class BootReceiver extends BroadcastReceiver {
 		try {
 			MainActivity.loadProperties(context);
 			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
-				try {
-					tweak(Integer.parseInt(MainActivity.properties.getProperty("hotplug_profile", "0")),
-							Integer.parseInt(MainActivity.properties.getProperty("interactive_profile", "1")));
-					Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
-				} catch (Throwable e) {
-					Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
-				}
+				final int profile = Integer.parseInt(MainActivity.properties.getProperty("hotplug_profile", "0"));
+				final int hotplug = Integer.parseInt(MainActivity.properties.getProperty("interactive_profile", "1"));
+				new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							tweak(profile, hotplug);
+							Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
+						} catch (Throwable e) {
+							Log.e(LOG_TAG, "Boot tweak async failed", e);
+							Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+						}
+					}
+				}).start();
 			}
-			boolean dynatweak_service = MainActivity.properties.getProperty("dynatweak_service", "disabled").equals("enabled");
+			final boolean dynatweak_service = MainActivity.properties.getProperty("dynatweak_service", "disabled").equals("enabled");
 			if (dynatweak_service) {
 				context.startService(new Intent(context, DynatweakService.class));
 			}
 		} catch (Throwable ex) {
+			Log.e(LOG_TAG, "Boot receiver failed", ex);
 			Toast.makeText(context, R.string.boot_exception, Toast.LENGTH_SHORT).show();
 		}
 	}
