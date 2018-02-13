@@ -67,6 +67,11 @@ class DeviceInfo {
 
 	class CpuStat implements DeviceNode {
 
+		// "cpu user nice system idle iowait irq softirq"
+		final Pattern cpu_all = Pattern.compile(
+				"^cpu {2}(\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+)",
+				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		Pattern[] cpu_line;
 		long cpu_iowait[], cpu_idle[], cpu_total[];
 		private int count;
 		private double freq_all;
@@ -83,7 +88,13 @@ class DeviceInfo {
 			cpu_idle = new long[count];
 			cpu_total = new long[count];
 			this.count = count;
-			for (int id = 0; id < count; id++) last_iowait[id] = last_idle[id] = last_total[id] = 0;
+			cpu_line = new Pattern[count];
+			for (int id = 0; id < count; id++) {
+				last_iowait[id] = last_idle[id] = last_total[id] = 0;
+				cpu_line[id] = Pattern.compile(
+						"^cpu" + id + " (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+)",
+						Pattern.UNIX_LINES | Pattern.MULTILINE);
+			}
 			try {
 				stat = new RandomAccessFile("/proc/stat", "r");
 			} catch (Throwable ignore) {
@@ -95,29 +106,25 @@ class DeviceInfo {
 			if (stat == null) return;
 			try {
 				stat.seek(0);
-				List<String> lines = new ArrayList<>();
-				for (int i = 0; i <= count; i++) {
-					String line = stat.readLine();
-					if (line.startsWith("cpu"))
-						lines.add(line);
-					else break;
+				String data;
+				{
+					stat.seek(0);
+					byte[] buf = new byte[2048];
+					int read = stat.read(buf);
+					data = new String(buf, 0, read);
 				}
-				for (String line : lines) {
-					int pos = 0, id;
-					String reads[] = line.trim().split(" ");
-					if (reads[0].length() > 3) {
-						id = Integer.parseInt(reads[0].substring(3));
-					} else id = -1;
-					long total = 0, iowait = 0, idle = 0, read;
-					for (int i = 1; i < reads.length; i++) {
-						String v = reads[i];
-						if (v.length() <= 0) continue;
-						total += read = Long.parseLong(v);
-						if (pos == 3) idle = read;
-						if (pos == 4) iowait = read;
-						pos++;
-					}
-					if (id < 0) {
+				{
+					Matcher m = cpu_all.matcher(data);
+					if (m.find()) {
+						long idle = Long.parseLong(m.group(4)),
+								iowait = Long.parseLong(m.group(5));
+						long total = Long.parseLong(m.group(1)) +
+								Long.parseLong(m.group(1)) +
+								Long.parseLong(m.group(2)) +
+								Long.parseLong(m.group(3)) +
+								idle + iowait +
+								Long.parseLong(m.group(6)) +
+								Long.parseLong(m.group(7));
 						cpu_all_iowait = iowait - last_cpu_all_iowait;
 						cpu_all_idle = idle - last_cpu_all_idle;
 						cpu_all_total = total - last_cpu_all_total;
@@ -126,9 +133,21 @@ class DeviceInfo {
 						last_cpu_all_iowait = iowait;
 						last_cpu_all_idle = idle;
 						last_cpu_all_total = total;
-					} else {
+					}
+				}
+				for (int id = 0; id < count; id++) {
+					Matcher m = cpu_line[id].matcher(data);
+					if (m.find()) {
+						long idle = Long.parseLong(m.group(4)),
+								iowait = Long.parseLong(m.group(5));
+						long total = Long.parseLong(m.group(1)) +
+								Long.parseLong(m.group(1)) +
+								Long.parseLong(m.group(2)) +
+								Long.parseLong(m.group(3)) +
+								idle + iowait +
+								Long.parseLong(m.group(6)) +
+								Long.parseLong(m.group(7));
 						cpu_iowait[id] = iowait - last_iowait[id];
-
 						cpu_idle[id] = idle - last_idle[id];
 						cpu_total[id] = total - last_total[id];
 						if (cpu_total[id] < 0 || cpu_idle[id] < 0 || cpu_iowait[id] < 0)
@@ -139,6 +158,7 @@ class DeviceInfo {
 					}
 				}
 			} catch (IOException e) {
+				Log.e(LOG_TAG, "CpuStat", e);
 				stat = null;
 			}
 		}
@@ -200,7 +220,6 @@ class DeviceInfo {
 				hasBatteryTemp = false;
 			}
 			if (k.hasNode(node_battery_curr)) {
-				// k.grantRead(node_battery_curr);
 				try {
 					k.readNode(node_battery_curr);
 				} catch (Throwable ignore) {
@@ -210,7 +229,6 @@ class DeviceInfo {
 			if (!(hasBatteryTemp && hasSocTemp && node_battery_curr != null)) {
 				node_battery_volt = "/sys/class/power_supply/battery/voltage_now";
 				if (k.hasNode(node_battery_volt)) {
-					// k.grantRead(node_battery_volt);
 					try {
 						k.readNode(node_battery_volt);
 					} catch (Throwable ignore) {
