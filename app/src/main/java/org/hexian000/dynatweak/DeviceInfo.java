@@ -303,7 +303,6 @@ class DeviceInfo {
 					gpu_freq = null;
 			}
 			if (gpu_freq != null) {
-				// k.grantRead(gpu_freq);
 				try {
 					k.readNode(gpu_freq);
 				} catch (Throwable ignore) {
@@ -314,7 +313,6 @@ class DeviceInfo {
 			if (!k.hasNode(governor))
 				governor = null;
 			if (governor != null) {
-				// k.grantRead(governor);
 				try {
 					k.readNode(governor);
 				} catch (Throwable ignore) {

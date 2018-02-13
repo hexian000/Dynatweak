@@ -534,7 +534,7 @@ class AdaptiveTempReader {
 		fr.seek(0);
 		int raw = Integer.parseInt(fr.readLine());
 		double value = raw / divider;
-		while (Math.abs(value) >= 150.0) {
+		while (Math.abs(value) >= 130.0) {
 			divider *= 10.0;
 			value = raw / divider;
 		}
