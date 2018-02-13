@@ -166,16 +166,22 @@ class Kernel {
 			if (exist) continue;
 			try {
 				String policy = "/sys/devices/system/cpu/cpufreq/policy" + cpu.getId();
-				String[] raw = readNodeByRoot(policy + "/affected_cpus").split(" +");
-				int[] affected_cpus = new int[raw.length];
-				int i = 0;
-				for (String raw_id : raw) {
-					int id = Integer.parseInt(raw_id);
-					cpuCores.get(id).setCluster(cluster);
-					affected_cpus[i++] = id;
+				if (!hasNode(policy)) {
+					policy = cpu.path + "/cpufreq";
 				}
-				clusterPolicies.add(new ClusterPolicy(cpu.getId(), affected_cpus, policy));
-				cluster++;
+				String affectedCpus = readNodeByRoot(policy + "/affected_cpus");
+				if (affectedCpus.length() > 0) {
+					String[] raw = affectedCpus.split(" +");
+					int[] affected_cpus = new int[raw.length];
+					int i = 0;
+					for (String raw_id : raw) {
+						int id = Integer.parseInt(raw_id);
+						cpuCores.get(id).setCluster(cluster);
+						affected_cpus[i++] = id;
+					}
+					clusterPolicies.add(new ClusterPolicy(cpu.getId(), affected_cpus, policy));
+					cluster++;
+				}
 			} catch (Throwable ex) {
 				Log.w(LOG_TAG, "read cpu policy failed", ex);
 			}
