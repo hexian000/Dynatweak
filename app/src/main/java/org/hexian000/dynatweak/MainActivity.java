@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
 	private void applySettings() {
 		final int hotplug_profile = Integer.parseInt(properties.getProperty("hotplug_profile", "0"));
 		final int profile = Integer.parseInt(properties.getProperty("interactive_profile", "0"));
-		final ProgressHandler handler = new ProgressHandler(this);
+		final TweakFinishedHandler handler = new TweakFinishedHandler(this);
 		new Thread() {
 			@Override
 			public void run() {
@@ -185,28 +185,43 @@ public class MainActivity extends Activity {
 	}
 }
 
-class ProgressHandler extends Handler {
-	private final MainActivity mainActivity;
+class TweakFinishedHandler extends Handler {
+	private final Context context;
+	private boolean isBootTime = false;
 
-	ProgressHandler(MainActivity mainActivity) {
-		this.mainActivity = mainActivity;
+	TweakFinishedHandler(MainActivity mainActivity) {
+		this.context = mainActivity;
 		final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
 		final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
 		buttonApply.setEnabled(false);
 		progressBar.setIndeterminate(true);
 	}
 
+	TweakFinishedHandler(Context context, boolean isBootTime) {
+		this.context = context;
+		this.isBootTime = isBootTime;
+	}
+
 	@Override
 	public void handleMessage(Message msg) {
-		if (msg.what == 0) {
-			Toast.makeText(mainActivity, R.string.operation_success, Toast.LENGTH_SHORT).show();
+		if (isBootTime) {
+			if (msg.what == 0) {
+				Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+			}
 		} else {
-			Toast.makeText(mainActivity, R.string.operation_failed, Toast.LENGTH_SHORT).show();
+			MainActivity mainActivity = (MainActivity) context;
+			if (msg.what == 0) {
+				Toast.makeText(context, R.string.operation_success, Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(context, R.string.operation_failed, Toast.LENGTH_SHORT).show();
+			}
+			final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
+			final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
+			buttonApply.setEnabled(true);
+			progressBar.setIndeterminate(false);
 		}
-		final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
-		final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
-		buttonApply.setEnabled(true);
-		progressBar.setIndeterminate(false);
 		super.handleMessage(msg);
 	}
 }

@@ -3,6 +3,7 @@ package org.hexian000.dynatweak;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -1155,13 +1156,16 @@ public class BootReceiver extends BroadcastReceiver {
 				new Thread() {
 					@Override
 					public void run() {
+						Message msg = new Message();
 						try {
 							tweak(profile, hotplug);
-							Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
+							msg.what = 0;
 						} catch (Throwable e) {
 							Log.e(LOG_TAG, "Boot tweak async failed", e);
-							Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+							msg.what = 1;
 						}
+						new TweakFinishedHandler(context, true).
+								sendMessage(msg);
 					}
 				}.start();
 			}
