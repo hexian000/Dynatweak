@@ -71,6 +71,7 @@ class DeviceInfo {
 		final Pattern cpu_all = Pattern.compile(
 				"^cpu {2}(\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+)",
 				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		byte[] buf = new byte[4096];
 		Pattern[] cpu_line;
 		long cpu_iowait[], cpu_idle[], cpu_total[];
 		private int count;
@@ -109,7 +110,6 @@ class DeviceInfo {
 				String data;
 				{
 					stat.seek(0);
-					byte[] buf = new byte[4096];
 					int read = stat.read(buf);
 					data = new String(buf, 0, read);
 				}
@@ -484,6 +484,7 @@ class DeviceInfo {
 				Pattern.UNIX_LINES | Pattern.MULTILINE);
 		final private Pattern MemAvailable = Pattern.compile("^MemAvailable:\\s*(\\d+) kB$",
 				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		byte[] buf = new byte[2048];
 		private RandomAccessFile info;
 
 		Memory() {
@@ -501,7 +502,6 @@ class DeviceInfo {
 				String data;
 				{
 					info.seek(0);
-					byte[] buf = new byte[2048];
 					int read = info.read(buf);
 					data = new String(buf, 0, read);
 				}
