@@ -9,13 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.Spinner;
-import android.widget.Toast;
-import android.widget.ToggleButton;
+import android.widget.*;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -69,7 +63,7 @@ public class MainActivity extends Activity {
 		}
 
 		// 初始化控件
-		CheckBox checkMasterSwitch = findViewById(R.id.checkMasterSwitch);
+		CheckBox checkBootTweak = findViewById(R.id.checkMasterSwitch);
 		spinnerProfile = findViewById(R.id.spinnerProfile);
 		spinnerHotplug = findViewById(R.id.spinnerHotplug);
 		toggleService = findViewById(R.id.toggleService);
@@ -78,9 +72,7 @@ public class MainActivity extends Activity {
 		// 加载设置
 		loadProperties(this);
 		boolean master = properties.getProperty("smooth_interactive", "disabled").equals("enabled");
-		checkMasterSwitch.setChecked(master);
-		spinnerHotplug.setEnabled(master);
-		spinnerProfile.setEnabled(master);
+		checkBootTweak.setChecked(master);
 		boolean service = properties.getProperty("dynatweak_service", "disabled").equals("enabled");
 		toggleService.setChecked(service);
 		if (service && DynatweakService.instance == null)
@@ -88,11 +80,9 @@ public class MainActivity extends Activity {
 		if (!service && DynatweakService.instance != null)
 			stopService(new Intent(this, DynatweakService.class));
 
-		checkMasterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+		checkBootTweak.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				spinnerHotplug.setEnabled(isChecked);
-				spinnerProfile.setEnabled(isChecked);
 				if (isChecked) {
 					properties.setProperty("smooth_interactive", "enabled");
 				} else {

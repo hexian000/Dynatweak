@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Dynatweak</string>
     <string name="app_introduction" tools:ignore="TypographyFractions">" · 测试机型小米2S/4/Note/5/5X，红米Note/2，一加3T/5\n · 其他机型不保证能用，请自行测试\n · 关闭或卸载后、重启手机才会生效"</string>
-    <string name="app_master_switch">总开关（支持开机自启）</string>
+    <string name="app_master_switch">开机时自动应用设置</string>
     <string name="app_device_profile">配置文件</string>
     <string name="app_hotplug_profile">热插拔模式</string>
     <string-array name="interactive_profile">
