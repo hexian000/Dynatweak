@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.hexian000.dynatweak.Kernel.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -30,13 +33,14 @@ class DeviceInfo {
 		for (Kernel.CpuCore cpuCore : k.cpuCores) {
 			cpu = new CPU(cpuCore.getId(), stat);
 			nodes.add(cpu);
-			Log.d(Kernel.LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
+			Log.d(LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
 		}
 		stat.initialize(k.cpuCores.size());
 		DeviceNode gpu = new GPU();
 		if (gpu.hasAny())
 			nodes.add(gpu);
 		nodes.add(stat);
+		nodes.add(new Memory());
 		if (tzBuild) {
 			nodes.add(new Sensors());
 		}
@@ -48,7 +52,7 @@ class DeviceInfo {
 			try {
 				dev.generateHtml(sb);
 			} catch (IOException ex) {
-				Log.e(Kernel.LOG_TAG, "Device info error", ex);
+				Log.e(LOG_TAG, "Device info error", ex);
 			}
 			sb.append("<br/>");
 		}
@@ -161,7 +165,9 @@ class DeviceInfo {
 			double busy = 1.0 - (idle + iowait);
 			if (busy < 0) busy = 0;
 			double util = (1.0 - idle) * (freq_all / count);
-			out.append(String.format(Locale.getDefault(), "util:%d%% busy:%d%% iowait:%d%%", (int) (util * 100.0 + 0.5), (int) (busy * 100.0 + 0.5), (int) (iowait * 100.0 + 0.5)));
+			out.append("util: ").append((int) (util * 100.0 + 0.5)).
+					append("% busy: ").append((int) (busy * 100.0 + 0.5)).
+					append("% iowait: ").append((int) (iowait * 100.0 + 0.5)).append('%');
 			freq_all = 0;
 		}
 
@@ -448,6 +454,71 @@ class DeviceInfo {
 				out.append("offline:0 0");
 			}
 			out.append("%");
+		}
+	}
+
+	private class Memory implements DeviceNode {
+		final private Pattern MemTotal = Pattern.compile("^MemTotal:\\s*(\\d+) kB$",
+				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		final private Pattern MemActive = Pattern.compile("^Active:\\s*(\\d+) kB$",
+				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		final private Pattern MemInactive = Pattern.compile("^Inactive:\\s*(\\d+) kB$",
+				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		final private Pattern MemAvailable = Pattern.compile("^MemAvailable:\\s*(\\d+) kB$",
+				Pattern.UNIX_LINES | Pattern.MULTILINE);
+		private RandomAccessFile info;
+
+		Memory() {
+			try {
+				info = new RandomAccessFile("/proc/meminfo", "r");
+			} catch (FileNotFoundException e) {
+				Log.e(LOG_TAG, "MemoryInfo", e);
+			}
+		}
+
+		@Override
+		public void generateHtml(StringBuilder out) throws IOException {
+			if (info == null) return;
+			try {
+				String data;
+				{
+					info.seek(0);
+					byte[] buf = new byte[2048];
+					int read = info.read(buf);
+					data = new String(buf, 0, read);
+				}
+				long memTotal, memAvail, memActive, memInactive;
+				Matcher matcher;
+				matcher = MemTotal.matcher(data);
+				if (matcher.find()) {
+					memTotal = Long.parseLong(matcher.group(1));
+				} else return;
+				matcher = MemAvailable.matcher(data);
+				if (matcher.find()) {
+					memAvail = Long.parseLong(matcher.group(1));
+				} else return;
+				matcher = MemActive.matcher(data);
+				if (matcher.find()) {
+					memActive = Long.parseLong(matcher.group(1));
+				} else return;
+				matcher = MemInactive.matcher(data);
+				if (matcher.find()) {
+					memInactive = Long.parseLong(matcher.group(1));
+				} else return;
+				out.append("mem: ").append(memAvail / 1024).
+						append('/').append(memTotal / 1024).
+						append(" a/i: ").append(memActive / 1024).
+						append('/').append(memInactive / 1024);
+			} catch (Throwable ex) {
+				Log.e(LOG_TAG, "Memory.generateHtml", ex);
+				info = null;
+				throw new IOException(ex);
+			}
+		}
+
+		@Override
+		public boolean hasAny() {
+			return true;
 		}
 	}
 }
