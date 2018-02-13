@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
 				return;
 			}
 		} catch (Throwable e) {
-			Log.d(LOG_TAG, "Unsupported", e);
+			Log.wtf(LOG_TAG, "Unsupported", e);
 			Toast.makeText(this, R.string.kernel_unsupported, Toast.LENGTH_SHORT).show();
 			finish();
 			return;
