@@ -26,6 +26,7 @@ public class BootReceiver extends BroadcastReceiver {
 	private static final int HOTPLUG_ALLCORES = 0;
 	private static final int HOTPLUG_LITTLECORES = 1;
 	private static final int HOTPLUG_DRIVER = 2;
+	static boolean Fired = false;
 
 	static synchronized void tweak(int hotplug, int profile) throws IOException {
 		Log.d(LOG_TAG, "Start tweaking...");
@@ -1140,18 +1141,18 @@ public class BootReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(final Context context, Intent intent) {
-		Log.d(LOG_TAG, "Boot receiver fired");
 		final String action = intent.getAction();
 		if (!"android.intent.action.BOOT_COMPLETED".equals(action)) {
 			Log.w(LOG_TAG, "Wrong intent action - \"" + action + "\"");
 			return;
 		}
+		BootReceiver.Fired = true;
 		try {
 			MainActivity.loadProperties(context);
 			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
 				final int profile = Integer.parseInt(MainActivity.properties.getProperty("hotplug_profile", "0"));
 				final int hotplug = Integer.parseInt(MainActivity.properties.getProperty("interactive_profile", "1"));
-				new Thread(new Runnable() {
+				new Thread() {
 					@Override
 					public void run() {
 						try {
@@ -1162,7 +1163,7 @@ public class BootReceiver extends BroadcastReceiver {
 							Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
 						}
 					}
-				}).start();
+				}.start();
 			}
 			final boolean dynatweak_service = MainActivity.properties.getProperty("dynatweak_service", "disabled").equals("enabled");
 			if (dynatweak_service) {

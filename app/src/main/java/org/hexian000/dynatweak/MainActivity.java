@@ -1,7 +1,6 @@
 package org.hexian000.dynatweak;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -19,7 +18,6 @@ import static org.hexian000.dynatweak.Kernel.LOG_TAG;
 public class MainActivity extends Activity {
 	private static final String PREFERENCES_FILE_NAME = "preferences";
 	static Properties properties = null;
-	private ToggleButton toggleService;
 
 	static void loadProperties(Context context) {
 		if (MainActivity.properties == null) {
@@ -65,19 +63,24 @@ public class MainActivity extends Activity {
 		final CheckBox checkBootTweak = findViewById(R.id.checkMasterSwitch);
 		final Spinner spinnerProfile = findViewById(R.id.spinnerProfile);
 		final Spinner spinnerHotplug = findViewById(R.id.spinnerHotplug);
-		toggleService = findViewById(R.id.toggleService);
-		Button buttonApply = findViewById(R.id.buttonApply);
+		final ToggleButton toggleService = findViewById(R.id.toggleService);
+		final Button buttonApply = findViewById(R.id.buttonApply);
 
 		// 加载设置
 		loadProperties(this);
-		boolean master = properties.getProperty("smooth_interactive", "disabled").equals("enabled");
-		checkBootTweak.setChecked(master);
+		boolean onBoot = properties.getProperty("smooth_interactive", "disabled").equals("enabled");
+		checkBootTweak.setChecked(onBoot);
 		boolean service = properties.getProperty("dynatweak_service", "disabled").equals("enabled");
 		toggleService.setChecked(service);
 		if (service && DynatweakService.instance == null)
 			startService(new Intent(this, DynatweakService.class));
 		if (!service && DynatweakService.instance != null)
 			stopService(new Intent(this, DynatweakService.class));
+
+		if (onBoot && !BootReceiver.Fired) {
+			BootReceiver.Fired = true;
+			applySettings();
+		}
 
 		checkBootTweak.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
@@ -173,7 +176,7 @@ public class MainActivity extends Activity {
 					BootReceiver.tweak(hotplug_profile, profile);
 					msg.what = 0;
 				} catch (Throwable e) {
-					Log.e(LOG_TAG, "MainActivity.applySettings()", e);
+					Log.e(LOG_TAG, "applySettings", e);
 					msg.what = 1;
 				}
 				handler.sendMessage(msg);
@@ -183,24 +186,27 @@ public class MainActivity extends Activity {
 }
 
 class ProgressHandler extends Handler {
-	private final Context context;
-	private ProgressDialog tweaking;
+	private final MainActivity mainActivity;
 
-	ProgressHandler(Context context) {
-		tweaking = ProgressDialog.show(context, "正在应用设置", "请稍候...");
-		tweaking.show();
-		this.context = context;
+	ProgressHandler(MainActivity mainActivity) {
+		this.mainActivity = mainActivity;
+		final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
+		final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
+		buttonApply.setEnabled(false);
+		progressBar.setIndeterminate(true);
 	}
 
 	@Override
 	public void handleMessage(Message msg) {
 		if (msg.what == 0) {
-			Toast.makeText(context, R.string.operation_success, Toast.LENGTH_SHORT).show();
+			Toast.makeText(mainActivity, R.string.operation_success, Toast.LENGTH_SHORT).show();
 		} else {
-			Toast.makeText(context, R.string.operation_failed, Toast.LENGTH_SHORT).show();
+			Toast.makeText(mainActivity, R.string.operation_failed, Toast.LENGTH_SHORT).show();
 		}
-		tweaking.dismiss();
-		tweaking = null;
+		final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
+		final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
+		buttonApply.setEnabled(true);
+		progressBar.setIndeterminate(false);
 		super.handleMessage(msg);
 	}
 }
