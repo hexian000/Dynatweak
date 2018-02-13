@@ -27,7 +27,7 @@ public class BootReceiver extends BroadcastReceiver {
 	private static final int HOTPLUG_LITTLECORES = 1;
 	private static final int HOTPLUG_DRIVER = 2;
 
-	static void tweak(int hotplug, int profile) throws IOException {
+	static synchronized void tweak(int hotplug, int profile) throws IOException {
 		Log.d(LOG_TAG, "Start tweaking...");
 		Kernel k = Kernel.getInstance();
 		Kernel.CpuCore cpu0 = k.cpuCores.get(0);
