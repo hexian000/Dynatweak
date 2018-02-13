@@ -10,6 +10,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static org.hexian000.dynatweak.Kernel.LOG_TAG;
 
@@ -1147,12 +1148,17 @@ public class BootReceiver extends BroadcastReceiver {
 			Log.w(LOG_TAG, "Wrong intent action - \"" + action + "\"");
 			return;
 		}
+		final Context appContext = context.getApplicationContext();
+		if (!(appContext instanceof DynatweakApp)) {
+			Log.w(LOG_TAG, "ApplicationContext is not DynatweakApp");
+			return;
+		}
+		final Properties config = ((DynatweakApp) appContext).getConfiguration();
 		BootReceiver.Fired = true;
 		try {
-			MainActivity.loadProperties(context);
-			if (MainActivity.properties.getProperty("smooth_interactive", "disabled").equals("enabled")) {
-				final int profile = Integer.parseInt(MainActivity.properties.getProperty("hotplug_profile", "0"));
-				final int hotplug = Integer.parseInt(MainActivity.properties.getProperty("interactive_profile", "1"));
+			if (config.getProperty("smooth_interactive", "disabled").equals("enabled")) {
+				final int profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
+				final int hotplug = Integer.parseInt(config.getProperty("interactive_profile", "1"));
 				new Thread() {
 					@Override
 					public void run() {
@@ -1164,12 +1170,12 @@ public class BootReceiver extends BroadcastReceiver {
 							Log.e(LOG_TAG, "Boot tweak async failed", e);
 							msg.what = 1;
 						}
-						new TweakFinishedHandler(context, true).
+						new TweakFinishedHandler(appContext, true).
 								sendMessage(msg);
 					}
 				}.start();
 			}
-			final boolean dynatweak_service = MainActivity.properties.getProperty("dynatweak_service", "disabled").equals("enabled");
+			final boolean dynatweak_service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
 			if (dynatweak_service) {
 				context.startService(new Intent(context, DynatweakService.class));
 			}

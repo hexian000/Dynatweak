@@ -10,34 +10,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.*;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import static org.hexian000.dynatweak.Kernel.LOG_TAG;
 
 public class MainActivity extends Activity {
-	private static final String PREFERENCES_FILE_NAME = "preferences";
-	static Properties properties = null;
-
-	static void loadProperties(Context context) {
-		if (MainActivity.properties == null) {
-			MainActivity.properties = new Properties();
-			try {
-				MainActivity.properties.load(context.openFileInput("preferences"));
-			} catch (IOException ex) {
-				Log.e(LOG_TAG, "Error loading properties", ex);
-			}
-		}
-	}
-
-	private static void saveProperties(Context context) {
-		try {
-			properties.store(context.openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE), null);
-		} catch (IOException ex) {
-			Log.e(LOG_TAG, "Error loading properties", ex);
-		}
-	}
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -67,10 +44,10 @@ public class MainActivity extends Activity {
 		final Button buttonApply = findViewById(R.id.buttonApply);
 
 		// 加载设置
-		loadProperties(this);
-		boolean onBoot = properties.getProperty("smooth_interactive", "disabled").equals("enabled");
+		Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+		boolean onBoot = config.getProperty("smooth_interactive", "disabled").equals("enabled");
 		checkBootTweak.setChecked(onBoot);
-		boolean service = properties.getProperty("dynatweak_service", "disabled").equals("enabled");
+		boolean service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
 		toggleService.setChecked(service);
 		if (service && DynatweakService.instance == null)
 			startService(new Intent(this, DynatweakService.class));
@@ -85,13 +62,14 @@ public class MainActivity extends Activity {
 		checkBootTweak.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
 				if (isChecked) {
-					properties.setProperty("smooth_interactive", "enabled");
+					config.setProperty("smooth_interactive", "enabled");
 				} else {
-					properties.setProperty("smooth_interactive", "disabled");
+					config.setProperty("smooth_interactive", "disabled");
 					Toast.makeText(MainActivity.this, R.string.reboot_suggest, Toast.LENGTH_SHORT).show();
 				}
-				saveProperties(MainActivity.this);
+				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 		});
 
@@ -105,54 +83,59 @@ public class MainActivity extends Activity {
 					first = false;
 					return;
 				}
-				properties.setProperty("interactive_profile", i + "");
-				saveProperties(MainActivity.this);
+				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+				config.setProperty("interactive_profile", i + "");
+				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
-				properties.setProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "");
-				saveProperties(MainActivity.this);
+				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+				config.setProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "");
+				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 		});
-		spinnerProfile.setSelection(Integer.parseInt(properties.getProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "")));
+		spinnerProfile.setSelection(Integer.parseInt(config.getProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "")));
 
 		spinnerHotplug.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			boolean first = true;
 
 			@Override
 			public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
 				if (first) {
 					first = false;
 					return;
 				}
 				if (i == 2) {
-					properties.setProperty("thermal_service", "disabled");
+					config.setProperty("thermal_service", "disabled");
 				}
-				properties.setProperty("hotplug_profile", i + "");
-				saveProperties(MainActivity.this);
+				config.setProperty("hotplug_profile", i + "");
+				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
-				properties.setProperty("hotplug_profile", "0");
-				saveProperties(MainActivity.this);
+				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+				config.setProperty("hotplug_profile", "0");
+				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 		});
-		spinnerHotplug.setSelection(Integer.parseInt(properties.getProperty("hotplug_profile", "0")));
+		spinnerHotplug.setSelection(Integer.parseInt(config.getProperty("hotplug_profile", "0")));
 
 		toggleService.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
+				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
 				Intent intent1 = new Intent(MainActivity.this, DynatweakService.class);
 				if (toggleService.isChecked()) {
 					startService(intent1);
-					properties.setProperty("dynatweak_service", "enabled");
+					config.setProperty("dynatweak_service", "enabled");
 				} else {
 					stopService(intent1);
-					properties.setProperty("dynatweak_service", "disabled");
+					config.setProperty("dynatweak_service", "disabled");
 				}
-				saveProperties(MainActivity.this);
+				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 		});
 
@@ -165,8 +148,9 @@ public class MainActivity extends Activity {
 	}
 
 	private void applySettings() {
-		final int hotplug_profile = Integer.parseInt(properties.getProperty("hotplug_profile", "0"));
-		final int profile = Integer.parseInt(properties.getProperty("interactive_profile", "0"));
+		final Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+		final int hotplug_profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
+		final int profile = Integer.parseInt(config.getProperty("interactive_profile", "0"));
 		final TweakFinishedHandler handler = new TweakFinishedHandler(this);
 		new Thread() {
 			@Override
