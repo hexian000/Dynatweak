@@ -21,7 +21,7 @@ import android.widget.Toast;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static org.hexian000.dynatweak.Kernel.LOG_TAG;
+import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -39,7 +39,7 @@ public class DynatweakService extends Service {
 	private BroadcastReceiver eventListener = null;
 	private DeviceInfo deviceInfo = null;
 
-	void showMonitor() {
+	private void showMonitor() {
 		if (!visible) {
 			try {
 				createOverlay(this);
@@ -59,7 +59,7 @@ public class DynatweakService extends Service {
 		}
 	}
 
-	void hideMonitor() {
+	private void hideMonitor() {
 		if (visible) removeOverlay();
 	}
 

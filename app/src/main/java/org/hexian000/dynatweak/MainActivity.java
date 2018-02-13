@@ -12,7 +12,7 @@ import android.widget.*;
 
 import java.util.Properties;
 
-import static org.hexian000.dynatweak.Kernel.LOG_TAG;
+import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
 public class MainActivity extends Activity {
 	@Override

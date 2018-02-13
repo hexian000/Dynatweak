@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static org.hexian000.dynatweak.Kernel.LOG_TAG;
+import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.

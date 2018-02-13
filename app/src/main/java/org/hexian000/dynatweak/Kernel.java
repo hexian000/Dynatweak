@@ -8,14 +8,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
+
 /**
  * Created by hexian on 2017/6/18.
  * Kernel interface
  */
 class Kernel {
-
-	static final String LOG_TAG = "Dynatweak";
-
 	private static Kernel instance = null;
 	final List<CpuCore> cpuCores;
 	private final List<ClusterPolicy> clusterPolicies;
@@ -531,7 +530,7 @@ class AdaptiveTempReader {
 			divider = 1.0;
 			read();
 		} catch (Throwable e) {
-			Log.w(Kernel.LOG_TAG, "AdaptiveTempReader node=" + node, e);
+			Log.w(LOG_TAG, "AdaptiveTempReader node=" + node, e);
 			throw new FileNotFoundException();
 		}
 	}

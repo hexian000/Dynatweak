@@ -6,9 +6,9 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.Properties;
 
-import static org.hexian000.dynatweak.Kernel.LOG_TAG;
-
 public class DynatweakApp extends Application {
+	static final String LOG_TAG = "Dynatweak";
+
 	private static final String PREFERENCES_FILE_NAME = "preferences";
 	private Properties configuration = null;
 

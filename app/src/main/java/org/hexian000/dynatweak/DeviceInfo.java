@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.hexian000.dynatweak.Kernel.LOG_TAG;
+import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
