@@ -178,6 +178,7 @@ class TweakFinishedHandler extends Handler {
 		final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
 		final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
 		buttonApply.setEnabled(false);
+		progressBar.setVisibility(View.VISIBLE);
 		progressBar.setIndeterminate(true);
 	}
 
@@ -205,6 +206,7 @@ class TweakFinishedHandler extends Handler {
 			final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
 			buttonApply.setEnabled(true);
 			progressBar.setIndeterminate(false);
+			progressBar.setVisibility(View.INVISIBLE);
 		}
 		super.handleMessage(msg);
 	}
