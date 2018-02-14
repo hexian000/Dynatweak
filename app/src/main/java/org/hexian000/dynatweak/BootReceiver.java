@@ -189,7 +189,10 @@ public class BootReceiver extends BroadcastReceiver {
 			for (int trial = 0; trial < 3; trial++) {
 				try {
 					cpu.setOnline(true, false);
-					cpu.setScalingMinFrequency(cpu.getMinFrequency());
+					if (profile == PROFILE_GAMING)
+						cpu.setScalingMinFrequency(cpu.getMaxFrequency());
+					else
+						cpu.setScalingMinFrequency(cpu.getMinFrequency());
 					cpu.setScalingMaxFrequency(cpu.getMaxFrequency());
 					// Per cpu governor tweak
 					if (profile != PROFILE_DISABLED) {
@@ -202,7 +205,8 @@ public class BootReceiver extends BroadcastReceiver {
 								governor.get(cpu.getCluster()), profiles.get(cpu.getCluster()));
 					}
 					break;
-				} catch (Throwable ignore) {
+				} catch (Throwable ex) {
+					Log.w(LOG_TAG, "cpu tweaking error", ex);
 				}
 			}
 		}
