@@ -50,11 +50,13 @@ class DeviceInfo {
 		StringBuilder sb = new StringBuilder();
 		for (DeviceNode dev : nodes) {
 			try {
-				dev.generateHtml(sb);
+				if (dev.hasAny()) {
+					dev.generateHtml(sb);
+					sb.append("<br/>");
+				}
 			} catch (IOException ex) {
 				Log.e(LOG_TAG, "Device info error", ex);
 			}
-			sb.append("<br/>");
 		}
 		return sb.toString();
 	}
@@ -133,6 +135,9 @@ class DeviceInfo {
 						last_cpu_all_iowait = iowait;
 						last_cpu_all_idle = idle;
 						last_cpu_all_total = total;
+					} else {
+						stat = null;
+						return;
 					}
 				}
 				for (int id = 0; id < count; id++) {
@@ -155,6 +160,9 @@ class DeviceInfo {
 						last_iowait[id] = iowait;
 						last_idle[id] = idle;
 						last_total[id] = total;
+					} else {
+						stat = null;
+						return;
 					}
 				}
 			} catch (IOException e) {
@@ -455,21 +463,20 @@ class DeviceInfo {
 				} catch (Throwable e) {
 					out.append("unknown");
 				}
-				out.append(":");
 				try {
 					curFreq = core.getScalingCurrentFrequency();
 					if (maxFreq < curFreq) maxFreq = curFreq;
-					out.append(curFreq / 1000);
-					out.append(" ");
+					out.append(':').append(curFreq / 1000);
 				} catch (Throwable e) {
 					curFreq = 0;
-					out.append("0 ");
 				}
-				out.append((int) (stat.getCoreUtil(id, (double) curFreq / maxFreq) * 100.0 + 0.5));
+				if (stat.hasAny())
+					out.append(' ').
+							append((int) (stat.getCoreUtil(id, (double) curFreq / maxFreq) * 100.0 + 0.5)).
+							append('%');
 			} else {
-				out.append("offline:0 0");
+				out.append("offline");
 			}
-			out.append("%");
 		}
 	}
 
