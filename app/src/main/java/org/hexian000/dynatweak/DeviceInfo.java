@@ -136,6 +136,7 @@ class DeviceInfo {
 						last_cpu_all_idle = idle;
 						last_cpu_all_total = total;
 					} else {
+						Log.e(LOG_TAG, "/proc/stat no matching \"cpu\" found");
 						stat = null;
 						return;
 					}
@@ -161,6 +162,7 @@ class DeviceInfo {
 						last_idle[id] = idle;
 						last_total[id] = total;
 					} else {
+						Log.e(LOG_TAG, "/proc/stat no matching \"cpu" + id + "\" found");
 						stat = null;
 						return;
 					}
