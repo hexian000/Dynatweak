@@ -288,6 +288,8 @@ class Kernel {
 			setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
 			setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "", true);
 		} else {
+			setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
+			setNode("/sys/module/msm_thermal/core_control/cpus_offlined", "0", true);
 			setNode("/sys/module/msm_thermal/core_control/enabled", "0", true);
 		}
 	}
