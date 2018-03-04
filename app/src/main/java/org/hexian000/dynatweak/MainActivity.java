@@ -54,11 +54,6 @@ public class MainActivity extends Activity {
 		if (!service && DynatweakService.instance != null)
 			stopService(new Intent(this, DynatweakService.class));
 
-		if (onBoot && !BootReceiver.Fired) {
-			BootReceiver.Fired = true;
-			applySettings();
-		}
-
 		checkBootTweak.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
