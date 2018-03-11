@@ -28,7 +28,6 @@ public class BootReceiver extends BroadcastReceiver {
 	private static final int HOTPLUG_ALLCORES = 0;
 	private static final int HOTPLUG_LITTLECORES = 1;
 	private static final int HOTPLUG_DRIVER = 2;
-	static boolean Fired = false;
 
 	static synchronized void tweak(int hotplug, int profile) throws IOException {
 		Log.d(LOG_TAG, "Start tweaking...");
@@ -36,11 +35,6 @@ public class BootReceiver extends BroadcastReceiver {
 		Kernel.CpuCore cpu0 = k.cpuCores.get(0);
 
 		// CPU Hotplug
-		k.runAsRoot("stop mpdecision");
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException ignore) {
-		}
 		k.setNode("/proc/hps/enabled", "0");
 		k.setNode("/sys/module/blu_plug/parameters/enabled", "0");
 		k.setNode("/sys/module/autosmp/parameters/enabled", "N");
@@ -62,7 +56,6 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
 
 		// Thermal
-		k.setNode("/sys/module/msm_thermal/parameters/enabled", "N");
 		if (k.hasCoreControl())
 			k.setCoreControlMask(0);
 
@@ -1158,7 +1151,6 @@ public class BootReceiver extends BroadcastReceiver {
 			return;
 		}
 		final Properties config = ((DynatweakApp) appContext).getConfiguration();
-		BootReceiver.Fired = true;
 		try {
 			if (config.getProperty("smooth_interactive", "disabled").equals("enabled")) {
 				final int profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));

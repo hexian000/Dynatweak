@@ -47,6 +47,7 @@ class Kernel {
 			case 1972:
 			case 1973:
 			case 1974:  // Xiaomi Mi 3/4/Note
+				runAsRoot("stop mpdecision");
 				try {
 					socTemp = new AdaptiveTempReader(getThermalZone(0));
 				} catch (Throwable ignore) {
@@ -57,6 +58,7 @@ class Kernel {
 				}
 				break;
 			case 1812:  // Xiaomi Mi 2/2S
+				runAsRoot("stop mpdecision");
 				try {
 					socTemp = new AdaptiveTempReader(getThermalZone(0));
 				} catch (Throwable ignore) {
@@ -279,19 +281,13 @@ class Kernel {
 	}
 
 	boolean hasCoreControl() {
-		return hasNode("/sys/module/msm_thermal/core_control/enabled") ||
-				hasNode("/sys/module/msm_thermal/core_control/cpus_offlined");
+		return hasNode("/sys/module/msm_thermal/core_control/cpus_offlined");
 	}
 
 	void setCoreControlMask(int mask) {
-		if (mask > 0) {
-			setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
-			setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "", true);
-		} else {
-			setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
-			setNode("/sys/module/msm_thermal/core_control/cpus_offlined", "0", true);
-			setNode("/sys/module/msm_thermal/core_control/enabled", "0", true);
-		}
+		setNode("/sys/module/msm_thermal/parameters/enabled", "Y", true);
+		setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
+		setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "", true);
 	}
 
 	String readNode(String path) throws IOException {
@@ -321,7 +317,7 @@ class Kernel {
 		setNode(path, value, false);
 	}
 
-	private void setNode(String path, String value, boolean lock) {
+	void setNode(String path, String value, boolean lock) {
 		if (lock) {
 			commands.add("[ -f '" + path + "' ] && " +
 					"chmod +w '" + path + "' && " +
