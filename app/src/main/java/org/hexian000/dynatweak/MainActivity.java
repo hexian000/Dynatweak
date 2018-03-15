@@ -8,7 +8,14 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.util.Properties;
 
@@ -70,14 +77,9 @@ public class MainActivity extends Activity {
 
 		// 事件响应
 		spinnerProfile.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			boolean first = true;
 
 			@Override
 			public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-				if (first) {
-					first = false;
-					return;
-				}
 				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
 				config.setProperty("interactive_profile", i + "");
 				((DynatweakApp) getApplication()).saveConfiguration();
