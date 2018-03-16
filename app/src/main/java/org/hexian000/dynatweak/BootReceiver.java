@@ -283,27 +283,27 @@ public class BootReceiver extends BroadcastReceiver {
 			case PROFILE_DISABLED:
 				break;
 			case PROFILE_POWERSAVE:
-				k.setSysctl("kernel.sched_downmigrate", "50");
+				k.setSysctl("kernel.sched_downmigrate", "100");
 				k.setSysctl("kernel.sched_upmigrate", "99");
-				k.setSysctl("kernel.sched_spill_nr_run", "1");
-				k.setSysctl("kernel.sched_spill_load", "50");
+				k.setSysctl("kernel.sched_spill_nr_run", "10");
+				k.setSysctl("kernel.sched_spill_load", "100");
 				break;
 			case PROFILE_BALANCED:
 				k.setSysctl("kernel.sched_downmigrate", "70");
-				k.setSysctl("kernel.sched_upmigrate", "95");
-				k.setSysctl("kernel.sched_spill_nr_run", "4");
-				k.setSysctl("kernel.sched_spill_load", "95");
-				break;
-			case PROFILE_PERFORMANCE:
-				k.setSysctl("kernel.sched_downmigrate", "85");
 				k.setSysctl("kernel.sched_upmigrate", "90");
 				k.setSysctl("kernel.sched_spill_nr_run", "4");
 				k.setSysctl("kernel.sched_spill_load", "99");
 				break;
+			case PROFILE_PERFORMANCE:
+				k.setSysctl("kernel.sched_downmigrate", "60");
+				k.setSysctl("kernel.sched_upmigrate", "80");
+				k.setSysctl("kernel.sched_spill_nr_run", "2");
+				k.setSysctl("kernel.sched_spill_load", "90");
+				break;
 			case PROFILE_GAMING:
-				k.setSysctl("kernel.sched_downmigrate", "0");
-				k.setSysctl("kernel.sched_upmigrate", "0");
-				k.setSysctl("kernel.sched_spill_nr_run", "4");
+				k.setSysctl("kernel.sched_downmigrate", "60");
+				k.setSysctl("kernel.sched_upmigrate", "80");
+				k.setSysctl("kernel.sched_spill_nr_run", "2");
 				k.setSysctl("kernel.sched_spill_load", "90");
 				break;
 		}
