@@ -648,15 +648,10 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0.4) + "");
 						k.setNode(policy + "/interactive/up_threshold_any_cpu_freq", cpu.fitPercentage(0.9) + "");
 						k.setNode(policy + "/interactive/above_hispeed_delay",
-								"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
-										cpu.fitPercentage(0.7) + ":20000 " +
-										cpu.fitPercentage(0.85) + ":80000 " +
-										cpu.fitPercentage(1) + ":100000");
+								"20000 " + cpu.fitPercentage(0.85) + ":80000");
 						k.setNode(policy + "/interactive/go_hispeed_load", "95");
 						k.setNode(policy + "/interactive/target_loads",
-								"85 " + cpu.fitPercentage(0.6) + ":90 " +
-										cpu.fitPercentage(0.8) + ":70 " +
-										cpu.fitPercentage(0.9) + ":95");
+								"80 " + cpu.fitFrequency(1000000) + ":90 ");
 						k.setNode(policy + "/interactive/up_threshold_any_cpu_load", "80");
 						k.setNode(policy + "/interactive/io_is_busy", "0");
 						k.setNode(policy + "/interactive/timer_rate", "20000");
@@ -669,10 +664,7 @@ public class BootReceiver extends BroadcastReceiver {
 						break;
 					case "blu_active":
 						k.setNode(policy + "/blu_active/above_hispeed_delay",
-								"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
-										cpu.fitPercentage(0.7) + ":20000 " +
-										cpu.fitPercentage(0.85) + ":80000 " +
-										cpu.fitPercentage(1) + ":100000");
+								"20000 " + cpu.fitPercentage(0.85) + ":80000");
 						k.setNode(policy + "/blu_active/align_windows", "1");
 						k.setNode(policy + "/blu_active/fastlane", "1");
 						k.setNode(policy + "/blu_active/fastlane_threshold", "80");
@@ -681,9 +673,7 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/blu_active/io_is_busy", "0");
 						k.setNode(policy + "/blu_active/min_sample_time", "20000");
 						k.setNode(policy + "/blu_active/target_loads",
-								"85 " + cpu.fitPercentage(0.6) + ":90 " +
-										cpu.fitPercentage(0.8) + ":70 " +
-										cpu.fitPercentage(0.9) + ":95");
+								"80 " + cpu.fitFrequency(1000000) + ":90 ");
 						k.setNode(policy + "/blu_active/timer_rate", "20000");
 						k.setNode(policy + "/blu_active/timer_slack", "20000");
 						break;
@@ -807,15 +797,13 @@ public class BootReceiver extends BroadcastReceiver {
 				switch (governor) {
 					case "interactive":
 						k.setNode(policy + "/interactive/above_hispeed_delay",
-								"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
-										cpu.fitPercentage(0.7) + ":20000 " +
-										cpu.fitPercentage(0.85) + ":80000 " +
-										cpu.fitPercentage(1) + ":100000");
+								"20000 " + cpu.fitPercentage(0.85) + ":80000");
 						k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.6) + "");
 						k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0.4) + "");
 						k.setNode(policy + "/interactive/up_threshold_any_cpu_freq", cpu.fitPercentage(0.8) + "");
 						k.setNode(policy + "/interactive/go_hispeed_load", "80");
-						k.setNode(policy + "/interactive/target_loads", "50");
+						k.setNode(policy + "/interactive/target_loads",
+								"60 " + cpu.fitFrequency(1000000) + ":80 ");
 						k.setNode(policy + "/interactive/up_threshold_any_cpu_load", "70");
 						k.setNode(policy + "/interactive/io_is_busy", "1");
 						k.setNode(policy + "/interactive/timer_rate", "20000");
@@ -827,11 +815,8 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/interactive/max_freq_hysteresis", "40000");
 						break;
 					case "blu_active":
-						k.setNode(policy + "/blu_active/above_hispeed_delay",
-								"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
-										cpu.fitPercentage(0.7) + ":20000 " +
-										cpu.fitPercentage(0.85) + ":80000 " +
-										cpu.fitPercentage(1) + ":100000");
+						k.setNode(policy + "/interactive/above_hispeed_delay",
+								"20000 " + cpu.fitPercentage(0.85) + ":80000");
 						k.setNode(policy + "/blu_active/align_windows", "1");
 						k.setNode(policy + "/blu_active/fastlane", "1");
 						k.setNode(policy + "/blu_active/fastlane_threshold", "25");
@@ -839,7 +824,8 @@ public class BootReceiver extends BroadcastReceiver {
 						k.setNode(policy + "/blu_active/hispeed_freq", cpu.fitPercentage(0.6) + "");
 						k.setNode(policy + "/blu_active/io_is_busy", "0");
 						k.setNode(policy + "/blu_active/min_sample_time", "20000");
-						k.setNode(policy + "/blu_active/target_loads", "50");
+						k.setNode(policy + "/blu_active/target_loads",
+								"60 " + cpu.fitFrequency(1000000) + ":80 ");
 						k.setNode(policy + "/blu_active/timer_rate", "20000");
 						k.setNode(policy + "/blu_active/timer_slack", "20000");
 						break;
