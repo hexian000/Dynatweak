@@ -1,12 +1,18 @@
 package org.hexian000.dynatweak;
 
 import android.util.Log;
-import eu.chainfire.libsuperuser.Shell;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import eu.chainfire.libsuperuser.Shell;
 
 import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
@@ -502,6 +508,20 @@ class Kernel {
 				}
 			else
 				setNode(path + "/online", "0", locked);
+		}
+
+		boolean trySetOnline(boolean online) {
+			String value = "0";
+			if (online) value = "1";
+			for (int putOnline = 0; putOnline < 10; putOnline++) {
+				if (!trySetNode(path + "/online", value)) {
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException ignore) {
+					}
+				} else return true;
+			}
+			return false;
 		}
 
 		String getGovernor() throws IOException {

@@ -42,6 +42,12 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/kernel/msm_mpdecision/conf/enabled", "0");
 		k.setNode("/sys/module/msm_hotplug/msm_enabled", "0");
 
+		// Thermal
+		if (k.hasCoreControl())
+			k.setCoreControlMask(0);
+
+		k.commit(); // Hotplug & thermal tweaks should be committed before CPU tweaking
+
 		// Entropy
 		k.setSysctl("kernel.random.read_wakeup_threshold", "128");
 		k.setSysctl("kernel.random.write_wakeup_threshold", "512");
@@ -54,10 +60,6 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/kernel/fast_charge/force_fast_charge", "1");
 		k.setNode("/sys/kernel/sched/arch_power", "1");
 		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
-
-		// Thermal
-		if (k.hasCoreControl())
-			k.setCoreControlMask(0);
 
 		// IO
 		List<String> block = k.listBlockDevices();
@@ -181,7 +183,7 @@ public class BootReceiver extends BroadcastReceiver {
 		for (Kernel.CpuCore cpu : k.cpuCores) {
 			for (int trial = 0; trial < 3; trial++) {
 				try {
-					cpu.setOnline(true, false);
+					cpu.trySetOnline(true);
 					if (profile == PROFILE_GAMING)
 						cpu.setScalingMinFrequency(cpu.getMaxFrequency());
 					else
