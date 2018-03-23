@@ -65,17 +65,13 @@ public class BootReceiver extends BroadcastReceiver {
 		List<String> block = k.listBlockDevices();
 		for (String i : block) {
 			Log.i(LOG_TAG, "block device detected: " + i);
-			if (k.hasNode(i + "/queue/iostats") &&
-					k.hasNode(i + "/queue/add_random") &&
-					k.hasNode(i + "/queue/read_ahead_kb") &&
-					k.hasNode(i + "/queue/rq_affinity") &&
-					k.hasNode(i + "/queue/scheduler") &&
-					k.hasNode(i + "/queue/rotational")) {
+			if (k.hasNode(i + "/queue/scheduler")) {
 				k.setNode(i + "/queue/iostats", "0");
 				k.setNode(i + "/queue/add_random", "0");
-				k.setNode(i + "/queue/read_ahead_kb", "512");
+				k.setNode(i + "/queue/read_ahead_kb", "1024");
 				k.setNode(i + "/queue/rq_affinity", "1");
 				k.setNode(i + "/queue/rotational", "0");
+				k.setNode(i + "/queue/nr_requests", "128");
 				List<String> schedulers = k.listBlockAvailableScheduler(i + "/queue/scheduler");
 				String scheduler = null;
 				if (schedulers.contains("maple"))
