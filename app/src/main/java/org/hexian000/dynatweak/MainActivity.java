@@ -1,31 +1,28 @@
 package org.hexian000.dynatweak;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.ProgressBar;
-import android.widget.Spinner;
-import android.widget.Toast;
-import android.widget.ToggleButton;
+import android.widget.*;
 
 import java.util.Properties;
 
 import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
 public class MainActivity extends Activity {
+	private ProgressBar progressBar;
+	private Button buttonApply;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		progressBar = findViewById(R.id.progressBar2);
+		buttonApply = findViewById(R.id.buttonApply);
 
 		// 检查兼容性
 		Kernel k;
@@ -56,23 +53,22 @@ public class MainActivity extends Activity {
 		checkBootTweak.setChecked(onBoot);
 		boolean service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
 		toggleService.setChecked(service);
-		if (service && DynatweakService.instance == null)
+		if (service && DynatweakService.instance == null) {
 			startService(new Intent(this, DynatweakService.class));
-		if (!service && DynatweakService.instance != null)
+		}
+		if (!service && DynatweakService.instance != null) {
 			stopService(new Intent(this, DynatweakService.class));
+		}
 
-		checkBootTweak.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
-				if (isChecked) {
-					config.setProperty("smooth_interactive", "enabled");
-				} else {
-					config.setProperty("smooth_interactive", "disabled");
-					Toast.makeText(MainActivity.this, R.string.reboot_suggest, Toast.LENGTH_SHORT).show();
-				}
-				((DynatweakApp) getApplication()).saveConfiguration();
+		checkBootTweak.setOnCheckedChangeListener((buttonView, isChecked) -> {
+			Properties config1 = ((DynatweakApp) getApplication()).getConfiguration();
+			if (isChecked) {
+				config1.setProperty("smooth_interactive", "enabled");
+			} else {
+				config1.setProperty("smooth_interactive", "disabled");
+				Toast.makeText(MainActivity.this, R.string.reboot_suggest, Toast.LENGTH_SHORT).show();
 			}
+			((DynatweakApp) getApplication()).saveConfiguration();
 		});
 
 		// 事件响应
@@ -92,7 +88,8 @@ public class MainActivity extends Activity {
 				((DynatweakApp) getApplication()).saveConfiguration();
 			}
 		});
-		spinnerProfile.setSelection(Integer.parseInt(config.getProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "")));
+		spinnerProfile.setSelection(
+				Integer.parseInt(config.getProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "")));
 
 		spinnerHotplug.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			boolean first = true;
@@ -120,91 +117,44 @@ public class MainActivity extends Activity {
 		});
 		spinnerHotplug.setSelection(Integer.parseInt(config.getProperty("hotplug_profile", "0")));
 
-		toggleService.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
-				Intent intent1 = new Intent(MainActivity.this, DynatweakService.class);
-				if (toggleService.isChecked()) {
-					startService(intent1);
-					config.setProperty("dynatweak_service", "enabled");
-				} else {
-					stopService(intent1);
-					config.setProperty("dynatweak_service", "disabled");
-				}
-				((DynatweakApp) getApplication()).saveConfiguration();
+		toggleService.setOnClickListener(view -> {
+			Properties config12 = ((DynatweakApp) getApplication()).getConfiguration();
+			Intent intent1 = new Intent(MainActivity.this, DynatweakService.class);
+			if (toggleService.isChecked()) {
+				startService(intent1);
+				config12.setProperty("dynatweak_service", "enabled");
+			} else {
+				stopService(intent1);
+				config12.setProperty("dynatweak_service", "disabled");
 			}
+			((DynatweakApp) getApplication()).saveConfiguration();
 		});
 
-		buttonApply.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				applySettings();
-			}
-		});
+		buttonApply.setOnClickListener(view -> applySettings());
 	}
 
 	private void applySettings() {
-		final Properties config = ((DynatweakApp) getApplication()).getConfiguration();
-		final int hotplug_profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
-		final int profile = Integer.parseInt(config.getProperty("interactive_profile", "0"));
-		final TweakFinishedHandler handler = new TweakFinishedHandler(this);
-		new Thread() {
-			@Override
-			public void run() {
-				Message msg = new Message();
-				try {
-					BootReceiver.tweak(hotplug_profile, profile);
-					msg.what = 0;
-				} catch (Throwable e) {
-					Log.e(LOG_TAG, "applySettings", e);
-					msg.what = 1;
-				}
-				handler.sendMessage(msg);
-			}
-		}.start();
-	}
-}
-
-class TweakFinishedHandler extends Handler {
-	private final Context context;
-	private boolean isBootTime = false;
-
-	TweakFinishedHandler(MainActivity mainActivity) {
-		this.context = mainActivity;
-		final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
-		final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
 		buttonApply.setEnabled(false);
 		progressBar.setVisibility(View.VISIBLE);
 		progressBar.setIndeterminate(true);
-	}
-
-	TweakFinishedHandler(Context context, boolean isBootTime) {
-		this.context = context;
-		this.isBootTime = isBootTime;
-	}
-
-	@Override
-	public void handleMessage(Message msg) {
-		if (isBootTime) {
-			if (msg.what == 0) {
-				Toast.makeText(context, R.string.boot_success, Toast.LENGTH_SHORT).show();
-			} else {
-				Toast.makeText(context, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+		final Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+		final int hotplug_profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
+		final int profile = Integer.parseInt(config.getProperty("interactive_profile", "0"));
+		final Handler handler = new Handler();
+		new Thread(() -> {
+			try {
+				BootReceiver.tweak(hotplug_profile, profile);
+				Toast.makeText(MainActivity.this, R.string.operation_success, Toast.LENGTH_SHORT).show();
+			} catch (Throwable e) {
+				Log.e(LOG_TAG, "applySettings", e);
+				Toast.makeText(MainActivity.this, R.string.operation_failed, Toast.LENGTH_SHORT).show();
+			} finally {
+				handler.post(() -> {
+					buttonApply.setEnabled(true);
+					progressBar.setIndeterminate(false);
+					progressBar.setVisibility(View.INVISIBLE);
+				});
 			}
-		} else {
-			MainActivity mainActivity = (MainActivity) context;
-			if (msg.what == 0) {
-				Toast.makeText(context, R.string.operation_success, Toast.LENGTH_SHORT).show();
-			} else {
-				Toast.makeText(context, R.string.operation_failed, Toast.LENGTH_SHORT).show();
-			}
-			final ProgressBar progressBar = mainActivity.findViewById(R.id.progressBar2);
-			final Button buttonApply = mainActivity.findViewById(R.id.buttonApply);
-			buttonApply.setEnabled(true);
-			progressBar.setIndeterminate(false);
-			progressBar.setVisibility(View.INVISIBLE);
-		}
-		super.handleMessage(msg);
+		}).start();
 	}
 }

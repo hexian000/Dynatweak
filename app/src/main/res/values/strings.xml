@@ -29,4 +29,5 @@
     <string name="error_overlay_permission">错误：没有获得“在其他应用的上层显示”权限</string>
     <string name="monitor_loading">Loading…</string>
     <string name="apply_settings">应用</string>
+    <string name="applying_settings">正在应用设置</string>
 </resources>
