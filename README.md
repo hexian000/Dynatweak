@@ -16,5 +16,5 @@
 + MSM8974(小米3/4/Note)
 + APQ8064(小米2)
 
-##截图
+## 截图
 ![screenshot](screenshot.png)
