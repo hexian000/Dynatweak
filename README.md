@@ -1,8 +1,8 @@
 # Dynatweak
 
-本软件部分功能需要ROOT权限
-
 简单易用的Android内核调节软件，内置内核参数配置模板
+
+*本软件部分功能需要ROOT权限*
 
 自带系统负载监控悬浮窗
 
@@ -15,3 +15,6 @@
 + MSM8996(一加3T/小米5)
 + MSM8974(小米3/4/Note)
 + APQ8064(小米2)
+
+##截图
+![screenshot](screenshot.png)
