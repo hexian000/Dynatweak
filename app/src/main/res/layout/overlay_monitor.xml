@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/overlay_monitor"
     android:layout_width="match_parent"
@@ -12,11 +11,12 @@
     tools:context="org.hexian000.dynatweak.MonitorOverlay">
 
     <TextView
-        android:text="@string/monitor_loading"
+        android:id="@+id/textView"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:id="@+id/textView"
         android:layout_weight="1"
+        android:fontFamily="monospace"
+        android:text="@string/monitor_loading"
         android:textColor="#00ff00"
         android:textSize="9dp"
         tools:ignore="SpUsage" />
