@@ -539,7 +539,8 @@ class Kernel {
 				if (!trySetNode(path + "/online", value)) {
 					try {
 						Thread.sleep(50);
-					} catch (InterruptedException ignore) {
+					} catch (InterruptedException e) {
+						return false;
 					}
 				} else {
 					return true;
