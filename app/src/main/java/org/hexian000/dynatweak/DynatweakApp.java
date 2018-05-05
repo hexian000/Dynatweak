@@ -14,9 +14,7 @@ public class DynatweakApp extends Application {
 
 	void saveConfiguration() {
 		try {
-			configuration.store(getApplicationContext().
-							openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE),
-					null);
+			configuration.store(getApplicationContext().openFileOutput(PREFERENCES_FILE_NAME, MODE_PRIVATE), null);
 		} catch (IOException ex) {
 			Log.wtf(LOG_TAG, "Error saving properties", ex);
 		}
@@ -30,8 +28,7 @@ public class DynatweakApp extends Application {
 		if (configuration == null) {
 			configuration = new Properties();
 			try {
-				configuration.load(getApplicationContext().
-						openFileInput("preferences"));
+				configuration.load(getApplicationContext().openFileInput("preferences"));
 			} catch (IOException ex) {
 				Log.wtf(LOG_TAG, "Error loading properties", ex);
 			}

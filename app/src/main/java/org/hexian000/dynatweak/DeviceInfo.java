@@ -26,8 +26,9 @@ class DeviceInfo {
 	DeviceInfo(Kernel k) {
 		nodes = new ArrayList<>();
 		DeviceNode soc = new SoC();
-		if (soc.hasAny())
+		if (soc.hasAny()) {
 			nodes.add(soc);
+		}
 		CPU cpu;
 		stat = new CpuStat();
 		for (Kernel.CpuCore cpuCore : k.cpuCores) {
@@ -37,8 +38,9 @@ class DeviceInfo {
 		}
 		stat.initialize(k.cpuCores.size());
 		DeviceNode gpu = new GPU();
-		if (gpu.hasAny())
+		if (gpu.hasAny()) {
 			nodes.add(gpu);
+		}
 		nodes.add(stat);
 		nodes.add(new Memory());
 		if (tzBuild) {
@@ -106,7 +108,9 @@ class DeviceInfo {
 		}
 
 		void sample() {
-			if (stat == null) return;
+			if (stat == null) {
+				return;
+			}
 			try {
 				stat.seek(0);
 				String data;
@@ -130,8 +134,9 @@ class DeviceInfo {
 						cpu_all_iowait = iowait - last_cpu_all_iowait;
 						cpu_all_idle = idle - last_cpu_all_idle;
 						cpu_all_total = total - last_cpu_all_total;
-						if (cpu_all_total < 0 || cpu_all_idle < 0 || cpu_all_iowait < 0)
+						if (cpu_all_total < 0 || cpu_all_idle < 0 || cpu_all_iowait < 0) {
 							cpu_all_total = cpu_all_idle = cpu_all_iowait = 0;
+						}
 						last_cpu_all_iowait = iowait;
 						last_cpu_all_idle = idle;
 						last_cpu_all_total = total;
@@ -156,8 +161,9 @@ class DeviceInfo {
 						cpu_iowait[id] = iowait - last_iowait[id];
 						cpu_idle[id] = idle - last_idle[id];
 						cpu_total[id] = total - last_total[id];
-						if (cpu_total[id] < 0 || cpu_idle[id] < 0 || cpu_iowait[id] < 0)
+						if (cpu_total[id] < 0 || cpu_idle[id] < 0 || cpu_iowait[id] < 0) {
 							cpu_total[id] = cpu_idle[id] = cpu_iowait[id] = 0;
+						}
 						last_iowait[id] = iowait;
 						last_idle[id] = idle;
 						last_total[id] = total;
@@ -177,9 +183,14 @@ class DeviceInfo {
 			double util;
 			if (freq > 0) {
 				util = 1.0 - (double) (cpu_idle[id] + cpu_iowait[id]) / cpu_total[id];
-				if (util < 0) util = 0;
-				else if (util > 1) util = 1;
-			} else util = 0;
+				if (util < 0) {
+					util = 0;
+				} else if (util > 1) {
+					util = 1;
+				}
+			} else {
+				util = 0;
+			}
 			freq_all += freq;
 			return util;
 		}
@@ -187,17 +198,25 @@ class DeviceInfo {
 		@Override
 		public void generateHtml(StringBuilder out) {
 			double idle = (double) cpu_all_idle / cpu_all_total;
-			if (idle < 0) idle = 0;
-			else if (idle > 1) idle = 1;
+			if (idle < 0) {
+				idle = 0;
+			} else if (idle > 1) {
+				idle = 1;
+			}
 			double iowait = (double) cpu_all_iowait / cpu_all_total;
-			if (iowait < 0) iowait = 0;
-			else if (iowait > 1) iowait = 1;
+			if (iowait < 0) {
+				iowait = 0;
+			} else if (iowait > 1) {
+				iowait = 1;
+			}
 			double busy = 1.0 - (idle + iowait);
-			if (busy < 0) busy = 0;
+			if (busy < 0) {
+				busy = 0;
+			}
 			double util = (1.0 - idle) * (freq_all / count);
 			out.append("util: ").append((int) (util * 100.0 + 0.5)).
 					append("% busy: ").append((int) (busy * 100.0 + 0.5)).
-					append("% iowait: ").append((int) (iowait * 100.0 + 0.5)).append('%');
+					   append("% iowait: ").append((int) (iowait * 100.0 + 0.5)).append('%');
 			freq_all = 0;
 		}
 
@@ -309,8 +328,9 @@ class DeviceInfo {
 			gpu_freq = "/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq";
 			if (!k.hasNode(gpu_freq)) {
 				gpu_freq = "/sys/class/kgsl/kgsl-3d0/gpuclk";
-				if (!k.hasNode(gpu_freq))
+				if (!k.hasNode(gpu_freq)) {
 					gpu_freq = null;
+				}
 			}
 			if (gpu_freq != null) {
 				try {
@@ -320,8 +340,9 @@ class DeviceInfo {
 				}
 			}
 			governor = "/sys/class/kgsl/kgsl-3d0/devfreq/governor";
-			if (!k.hasNode(governor))
+			if (!k.hasNode(governor)) {
 				governor = null;
+			}
 			if (governor != null) {
 				try {
 					k.readNode(governor);
@@ -362,7 +383,9 @@ class DeviceInfo {
 				try {
 					long rawFreq = Integer.parseInt(k.readNode(gpu_freq));
 					for (int i = 0; i < 2; i++)
-						if (rawFreq > 1000) rawFreq /= 1000;
+						if (rawFreq > 1000) {
+							rawFreq /= 1000;
+						}
 					out.append(rawFreq);
 				} catch (Throwable e) {
 					gpu_freq = null;
@@ -403,13 +426,15 @@ class DeviceInfo {
 				out.append(":");
 				out.append(reader.read());
 				i++;
-				if (i % 5 == 0)
+				if (i % 5 == 0) {
 					out.append("<br/>");
-				else
+				} else {
 					out.append(" ");
+				}
 			}
-			if (i % 5 != 0)
+			if (i % 5 != 0) {
 				out.append("<br/>");
+			}
 			out.append("model:");
 			out.append(Build.MODEL);
 			out.append(" soc_id:");
@@ -437,8 +462,11 @@ class DeviceInfo {
 
 		public void generateHtml(StringBuilder out) {
 			boolean on = core.isOnline();
-			if (on) out.append("<font color=\"#00ff00\">");
-			else out.append("<font color=\"#ff0000\">");
+			if (on) {
+				out.append("<font color=\"#00ff00\">");
+			} else {
+				out.append("<font color=\"#ff0000\">");
+			}
 			out.append("cpu");
 			out.append(id);
 			out.append(": ");
@@ -467,15 +495,18 @@ class DeviceInfo {
 				}
 				try {
 					curFreq = core.getScalingCurrentFrequency();
-					if (maxFreq < curFreq) maxFreq = curFreq;
+					if (maxFreq < curFreq) {
+						maxFreq = curFreq;
+					}
 					out.append(':').append(curFreq / 1000);
 				} catch (Throwable e) {
 					curFreq = 0;
 				}
-				if (stat.hasAny())
+				if (stat.hasAny()) {
 					out.append(' ').
 							append((int) (stat.getCoreUtil(id, (double) curFreq / maxFreq) * 100.0 + 0.5)).
-							append('%');
+							   append('%');
+				}
 			} else {
 				out.append("offline");
 			}
@@ -504,7 +535,9 @@ class DeviceInfo {
 
 		@Override
 		public void generateHtml(StringBuilder out) throws IOException {
-			if (info == null) return;
+			if (info == null) {
+				return;
+			}
 			try {
 				String data;
 				{
@@ -517,23 +550,31 @@ class DeviceInfo {
 				matcher = MemTotal.matcher(data);
 				if (matcher.find()) {
 					memTotal = Long.parseLong(matcher.group(1));
-				} else return;
+				} else {
+					return;
+				}
 				matcher = MemAvailable.matcher(data);
 				if (matcher.find()) {
 					memAvail = Long.parseLong(matcher.group(1));
-				} else return;
+				} else {
+					return;
+				}
 				matcher = MemActive.matcher(data);
 				if (matcher.find()) {
 					memActive = Long.parseLong(matcher.group(1));
-				} else return;
+				} else {
+					return;
+				}
 				matcher = MemInactive.matcher(data);
 				if (matcher.find()) {
 					memInactive = Long.parseLong(matcher.group(1));
-				} else return;
+				} else {
+					return;
+				}
 				out.append("mem: ").append(memAvail / 1024).
 						append('/').append(memTotal / 1024).
-						append(" a/i: ").append(memActive / 1024).
-						append('/').append(memInactive / 1024);
+						   append(" a/i: ").append(memActive / 1024).
+						   append('/').append(memInactive / 1024);
 			} catch (Throwable ex) {
 				Log.e(LOG_TAG, "Memory.generateHtml", ex);
 				info = null;

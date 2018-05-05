@@ -1,18 +1,12 @@
 package org.hexian000.dynatweak;
 
 import android.util.Log;
+import eu.chainfire.libsuperuser.Shell;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import eu.chainfire.libsuperuser.Shell;
 
 import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
@@ -34,7 +28,9 @@ class Kernel {
 		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
 		for (String node : raw_id_nodes) {
 			try {
-				if (!hasNode(node)) continue;
+				if (!hasNode(node)) {
+					continue;
+				}
 				raw_id = Integer.parseInt(readNode(node));
 				break;
 			} catch (Throwable ignore) {
@@ -50,67 +46,67 @@ class Kernel {
 		}
 
 		switch (raw_id) {
-			case 1972:
-			case 1973:
-			case 1974:  // Xiaomi Mi 3/4/Note
-				runAsRoot("stop mpdecision");
-				try {
-					socTemp = new AdaptiveTempReader(getThermalZone(0));
-				} catch (Throwable ignore) {
-				}
-				try {
-					gpuTemp = new AdaptiveTempReader(getThermalZone(10));
-				} catch (Throwable ignore) {
-				}
-				break;
-			case 1812:  // Xiaomi Mi 2/2S
-				runAsRoot("stop mpdecision");
-				try {
-					socTemp = new AdaptiveTempReader(getThermalZone(0));
-				} catch (Throwable ignore) {
-				}
-				try {
-					gpuTemp = new AdaptiveTempReader(getThermalZone(2));
-				} catch (Throwable ignore) {
-				}
-				break;
-			case 94:  // ONEPLUS A5000
-				try {
-					socTemp = new AdaptiveTempReader(getThermalZone(1));
-				} catch (Throwable ignore) {
-				}
-				try {
-					gpuTemp = new AdaptiveTempReader(getThermalZone(20));
-				} catch (Throwable ignore) {
-				}
-				break;
-			case 95:  // ONEPLUS A3010
-				try {
-					socTemp = new AdaptiveTempReader(getThermalZone(22));
-				} catch (Throwable ignore) {
-				}
-				try {
-					gpuTemp = new AdaptiveTempReader(getThermalZone(10));
-				} catch (Throwable ignore) {
-				}
-				break;
-			case 2375:  // Xiaomi Mi 5
-				try {
-					socTemp = new AdaptiveTempReader(getThermalZone(1));
-				} catch (Throwable ignore) {
-				}
-				try {
-					gpuTemp = new AdaptiveTempReader(getThermalZone(16));
-				} catch (Throwable ignore) {
-				}
-				break;
-			case 70:  // Xiaomi Mi 5X
-				try {
-					socTemp = new AdaptiveTempReader(getThermalZone(20));
-				} catch (Throwable ignore) {
-				}
-				gpuTemp = null;
-				break;
+		case 1972:
+		case 1973:
+		case 1974:  // Xiaomi Mi 3/4/Note
+			runAsRoot("stop mpdecision");
+			try {
+				socTemp = new AdaptiveTempReader(getThermalZone(0));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(getThermalZone(10));
+			} catch (Throwable ignore) {
+			}
+			break;
+		case 1812:  // Xiaomi Mi 2/2S
+			runAsRoot("stop mpdecision");
+			try {
+				socTemp = new AdaptiveTempReader(getThermalZone(0));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(getThermalZone(2));
+			} catch (Throwable ignore) {
+			}
+			break;
+		case 94:  // ONEPLUS A5000
+			try {
+				socTemp = new AdaptiveTempReader(getThermalZone(1));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(getThermalZone(20));
+			} catch (Throwable ignore) {
+			}
+			break;
+		case 95:  // ONEPLUS A3010
+			try {
+				socTemp = new AdaptiveTempReader(getThermalZone(22));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(getThermalZone(10));
+			} catch (Throwable ignore) {
+			}
+			break;
+		case 2375:  // Xiaomi Mi 5
+			try {
+				socTemp = new AdaptiveTempReader(getThermalZone(1));
+			} catch (Throwable ignore) {
+			}
+			try {
+				gpuTemp = new AdaptiveTempReader(getThermalZone(16));
+			} catch (Throwable ignore) {
+			}
+			break;
+		case 70:  // Xiaomi Mi 5X
+			try {
+				socTemp = new AdaptiveTempReader(getThermalZone(20));
+			} catch (Throwable ignore) {
+			}
+			gpuTemp = null;
+			break;
 		}
 
 		clusterPolicies = new ArrayList<>();
@@ -121,36 +117,36 @@ class Kernel {
 			try {
 				CpuCore cpu;
 				switch (raw_id) {
-					case 1972:
-					case 1973:
-					case 1974:  // Xiaomi Mi 3/4/Note
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								getThermalZone(cpuId + 5));
-						break;
-					case 70:  // Xiaomi Mi 5X
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								getThermalZone(cpuId + 10));
-						break;
-					case 94:  // ONEPLUS A5000
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								getThermalZone(cpuId + 11));
-						break;
-					case 95:  // ONEPLUS A3010
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								getThermalZone(cpuId + 5));
-						break;
-					case 2375:  // Xiaomi Mi 5
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								getThermalZone(cpuId + 9));
-						break;
-					case 1812:  // Xiaomi Mi 2/2S
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								getThermalZone(cpuId + 7));
-						break;
-					default:
-						cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
-								null);
-						break;
+				case 1972:
+				case 1973:
+				case 1974:  // Xiaomi Mi 3/4/Note
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 5));
+					break;
+				case 70:  // Xiaomi Mi 5X
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 10));
+					break;
+				case 94:  // ONEPLUS A5000
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 11));
+					break;
+				case 95:  // ONEPLUS A3010
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 5));
+					break;
+				case 2375:  // Xiaomi Mi 5
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 9));
+					break;
+				case 1812:  // Xiaomi Mi 2/2S
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							getThermalZone(cpuId + 7));
+					break;
+				default:
+					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+							null);
+					break;
 				}
 				cpuCores.add(cpu);
 			} catch (Throwable ignore) {
@@ -168,9 +164,13 @@ class Kernel {
 						break;
 					}
 				}
-				if (exist) break;
+				if (exist) {
+					break;
+				}
 			}
-			if (exist) continue;
+			if (exist) {
+				continue;
+			}
 			try {
 				String policy = "/sys/devices/system/cpu/cpufreq/policy" + cpu.getId();
 				if (!hasNode(policy)) {
@@ -196,7 +196,9 @@ class Kernel {
 	}
 
 	static Kernel getInstance() {
-		if (instance == null) instance = new Kernel();
+		if (instance == null) {
+			instance = new Kernel();
+		}
 		return instance;
 	}
 
@@ -338,12 +340,13 @@ class Kernel {
 	boolean trySetNode(String node, String value) {
 		if (hasNode(node)) {
 			List<String> result = Shell.SU.run("echo '" + value + "'>'" + node + "' ; cat '" + node + "'");
-			if (result.size() > 0 && result.get(0).equals(value))
+			if (result.size() > 0 && result.get(0).equals(value)) {
 				return true;
-			else
+			} else {
 				Log.w(LOG_TAG, "trySetNode " + node +
 						" got: \"" + result.get(0) +
 						"\" expected: \"" + value + "\"");
+			}
 		} else {
 			Log.w(LOG_TAG, "trySetNode not found: " + node);
 		}
@@ -430,7 +433,9 @@ class Kernel {
 			for (String s : frequencies.trim().split(" ")) {
 				scaling_available_frequencies.add(Integer.parseInt(s));
 			}
-			if (scaling_available_frequencies.size() < 1) scaling_available_frequencies = null;
+			if (scaling_available_frequencies.size() < 1) {
+				scaling_available_frequencies = null;
+			}
 			return scaling_available_frequencies;
 		}
 
@@ -444,7 +449,9 @@ class Kernel {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
 			for (Integer scaling_available_frequency : scaling_available_frequencies)
-				if (scaling_available_frequency >= frequency) return scaling_available_frequency;
+				if (scaling_available_frequency >= frequency) {
+					return scaling_available_frequency;
+				}
 			return scaling_available_frequencies.get(scaling_available_frequencies.size() - 1);
 		}
 
@@ -453,7 +460,7 @@ class Kernel {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
 			return fitFrequency((int) (scaling_available_frequencies.
-					get(scaling_available_frequencies.size() - 1)
+					                                                        get(scaling_available_frequencies.size() - 1)
 					* percentage));
 		}
 
@@ -496,7 +503,7 @@ class Kernel {
 		}
 
 		void setOnline(boolean online, boolean locked) {
-			if (online)
+			if (online) {
 				for (int putOnline = 0; putOnline < 10; putOnline++) {
 					setNode(path + "/online", "1", locked);
 					if (!isOnline()) {
@@ -504,22 +511,29 @@ class Kernel {
 							Thread.sleep(5);
 						} catch (InterruptedException ignore) {
 						}
-					} else break;
+					} else {
+						break;
+					}
 				}
-			else
+			} else {
 				setNode(path + "/online", "0", locked);
+			}
 		}
 
 		boolean trySetOnline(boolean online) {
 			String value = "0";
-			if (online) value = "1";
+			if (online) {
+				value = "1";
+			}
 			for (int putOnline = 0; putOnline < 10; putOnline++) {
 				if (!trySetNode(path + "/online", value)) {
 					try {
 						Thread.sleep(50);
 					} catch (InterruptedException ignore) {
 					}
-				} else return true;
+				} else {
+					return true;
+				}
 			}
 			return false;
 		}
@@ -575,7 +589,9 @@ class MaxTempReader extends AdaptiveTempReader {
 
 	double read() throws IOException {
 		double value = super.read();
-		if (value > max) max = value;
+		if (value > max) {
+			max = value;
+		}
 		return max;
 	}
 }

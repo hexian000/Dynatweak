@@ -32,7 +32,6 @@ public class DynatweakService extends Service {
 	static DynatweakService instance = null;
 	private final Handler handler = new Handler();
 	private boolean visible = false;
-	private Kernel k;
 	private Timer timer = null;
 	private WindowManager windowManager = null;
 	private MonitorOverlay monitorOverlay = null;
@@ -60,7 +59,9 @@ public class DynatweakService extends Service {
 	}
 
 	private void hideMonitor() {
-		if (visible) removeOverlay();
+		if (visible) {
+			removeOverlay();
+		}
 	}
 
 	@Override
@@ -105,8 +106,7 @@ public class DynatweakService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		k = Kernel.getInstance();
-		deviceInfo = new DeviceInfo(k);
+		deviceInfo = new DeviceInfo(Kernel.getInstance());
 	}
 
 	@Override
@@ -120,8 +120,9 @@ public class DynatweakService extends Service {
 			unregisterReceiver(eventListener);
 			eventListener = null;
 		}
-		if (windowManager != null)
+		if (windowManager != null) {
 			removeOverlay();
+		}
 		if (deviceInfo != null) {
 			deviceInfo = null;
 		}
