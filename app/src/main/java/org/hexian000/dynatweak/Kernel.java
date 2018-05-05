@@ -15,6 +15,8 @@ import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
  * Kernel interface
  */
 class Kernel {
+	private final static boolean hasRoot = Shell.SU.available();
+	private final static boolean isSELinux = Shell.SU.isSELinuxEnforcing();
 	private static Kernel instance = null;
 	final List<CpuCore> cpuCores;
 	private final List<ClusterPolicy> clusterPolicies;
@@ -23,6 +25,7 @@ class Kernel {
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	private Kernel() {
+		Log.d(LOG_TAG, "hasRoot:" + hasRoot + " isSELinux:" + isSELinux);
 		commands = new ArrayList<>();
 		raw_id = -1;
 		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
@@ -208,6 +211,9 @@ class Kernel {
 	}
 
 	boolean hasNodeByRoot(String path) {
+		if (!hasRoot) {
+			return hasNode(path);
+		}
 		List<String> result = Shell.SU.run("[ -e '" + path + "' ] && echo OK");
 		return result != null && result.size() > 0 && "OK".equals(result.get(0));
 	}
@@ -309,6 +315,14 @@ class Kernel {
 	}
 
 	private String readNodeByRoot(String path) {
+		if (!hasRoot) {
+			try {
+				return readNode(path);
+			} catch (IOException e) {
+				Log.w(LOG_TAG, "readNode got exception - \"" + path + "\"", e);
+				return "";
+			}
+		}
 		List<String> result = Shell.SU.run("cat '" + path + "'");
 		if (result != null && result.size() > 0) {
 			StringBuilder sb = new StringBuilder();
@@ -350,12 +364,16 @@ class Kernel {
 	boolean trySetNode(String node, String value) {
 		if (hasNode(node)) {
 			List<String> result = Shell.SU.run("echo '" + value + "'>'" + node + "' ; cat '" + node + "'");
-			if (result.size() > 0 && result.get(0).equals(value)) {
-				return true;
+			if (result != null && result.size() > 0) {
+				if (result.get(0).equals(value)) {
+					return true;
+				} else {
+					Log.w(LOG_TAG, "trySetNode " + node +
+							" got: \"" + result.get(0) +
+							"\" expected: \"" + value + "\"");
+				}
 			} else {
-				Log.w(LOG_TAG, "trySetNode " + node +
-						" got: \"" + result.get(0) +
-						"\" expected: \"" + value + "\"");
+				Log.w(LOG_TAG, "trySetNode got nothing: " + node + " broken root?");
 			}
 		} else {
 			Log.w(LOG_TAG, "trySetNode not found: " + node);
