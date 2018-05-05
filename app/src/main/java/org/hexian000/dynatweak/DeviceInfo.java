@@ -162,9 +162,9 @@ class DeviceInfo {
 						last_idle[id] = idle;
 						last_total[id] = total;
 					} else {
-						Log.e(LOG_TAG, "/proc/stat no matching \"cpu" + id + "\" found");
-						stat = null;
-						return;
+						cpu_iowait[id] = 0;
+						cpu_idle[id] = 0;
+						cpu_total[id] = 0;
 					}
 				}
 			} catch (IOException e) {
