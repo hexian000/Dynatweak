@@ -144,10 +144,12 @@ public class MainActivity extends Activity {
 		new Thread(() -> {
 			try {
 				BootReceiver.tweak(hotplug_profile, profile);
-				Toast.makeText(MainActivity.this, R.string.operation_success, Toast.LENGTH_SHORT).show();
+				handler.post(
+						() -> Toast.makeText(MainActivity.this, R.string.operation_success, Toast.LENGTH_SHORT).show());
 			} catch (Throwable e) {
 				Log.e(LOG_TAG, "applySettings", e);
-				Toast.makeText(MainActivity.this, R.string.operation_failed, Toast.LENGTH_SHORT).show();
+				handler.post(
+						() -> Toast.makeText(MainActivity.this, R.string.operation_failed, Toast.LENGTH_SHORT).show());
 			} finally {
 				handler.post(() -> {
 					buttonApply.setEnabled(true);

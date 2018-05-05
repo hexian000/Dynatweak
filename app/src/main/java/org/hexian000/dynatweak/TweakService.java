@@ -61,9 +61,12 @@ public class TweakService extends Service {
 		new Thread(() -> {
 			try {
 				BootReceiver.tweak(hotplug, profile);
+				handler.post(() ->
+						Toast.makeText(TweakService.this, R.string.boot_success, Toast.LENGTH_SHORT).show());
 			} catch (IOException e) {
 				Log.e(LOG_TAG, "TweakService exception", e);
-				Toast.makeText(TweakService.this, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+				handler.post(() ->
+						Toast.makeText(TweakService.this, R.string.boot_failed, Toast.LENGTH_SHORT).show());
 			} finally {
 				handler.post(TweakService.this::stopSelf);
 			}
