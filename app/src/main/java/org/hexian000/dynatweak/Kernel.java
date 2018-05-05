@@ -173,12 +173,13 @@ class Kernel {
 			}
 			try {
 				String policy = "/sys/devices/system/cpu/cpufreq/policy" + cpu.getId();
-				if (!hasNode(policy)) {
+				if (!hasNodeByRoot(policy)) {
 					policy = cpu.path + "/cpufreq";
 				}
-				String affectedCpus = readNodeByRoot(policy + "/affected_cpus");
+				String affectedCpus = readNodeByRoot(policy + "/related_cpus");
+				Log.d(LOG_TAG, "policy: " + policy + " related_cpus: " + affectedCpus);
 				if (affectedCpus.length() > 0) {
-					String[] raw = affectedCpus.split(" +");
+					String[] raw = affectedCpus.split("\\s+");
 					int[] affected_cpus = new int[raw.length];
 					int i = 0;
 					for (String raw_id : raw) {
@@ -204,6 +205,11 @@ class Kernel {
 
 	boolean hasNode(String path) {
 		return new File(path).exists();
+	}
+
+	boolean hasNodeByRoot(String path) {
+		List<String> result = Shell.SU.run("[ -e '" + path + "' ] && echo OK");
+		return result != null && result.size() > 0 && "OK".equals(result.get(0));
 	}
 
 	String getThermalZone(int id) {
@@ -305,7 +311,11 @@ class Kernel {
 	private String readNodeByRoot(String path) {
 		List<String> result = Shell.SU.run("cat '" + path + "'");
 		if (result != null && result.size() > 0) {
-			return result.get(0);
+			StringBuilder sb = new StringBuilder();
+			for (String line : result) {
+				sb.append(line).append('\n');
+			}
+			return sb.toString();
 		} else {
 			Log.w(LOG_TAG, "readNodeByRoot got nothing - \"" + path + "\"");
 			return "";
