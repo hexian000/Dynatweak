@@ -1148,13 +1148,13 @@ public class BootReceiver extends BroadcastReceiver {
 				final int profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
 				final int hotplug = Integer.parseInt(config.getProperty("interactive_profile", "1"));
 
-				Intent intent1 = new Intent(appContext, TweakService.class);
+				Intent intent1 = new Intent(context, TweakService.class);
 				intent1.putExtra("profile", profile);
 				intent1.putExtra("hotplug", hotplug);
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-					appContext.startForegroundService(intent1);
+					context.startForegroundService(intent1);
 				} else {
-					appContext.startService(intent1);
+					context.startService(intent1);
 				}
 			}
 			final boolean dynatweak_service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
