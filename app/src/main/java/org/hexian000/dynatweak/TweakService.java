@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,6 +19,17 @@ import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 
 public class TweakService extends Service {
 	public final static String CHANNEL_APPLYING_SETTINGS = "applying_settings";
+	private PowerManager.WakeLock wakeLock;
+
+	private void finish(boolean success) {
+		if (success) {
+			Toast.makeText(TweakService.this, R.string.boot_success, Toast.LENGTH_SHORT).show();
+		} else {
+			Toast.makeText(TweakService.this, R.string.boot_failed, Toast.LENGTH_SHORT).show();
+		}
+		wakeLock.release();
+		stopSelf();
+	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -55,22 +67,31 @@ public class TweakService extends Service {
 
 		startForeground(startId, builder.build());
 
+		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+		if (powerManager == null) {
+			Log.e(LOG_TAG, "cannot get POWER_SERVICE");
+			finish(false);
+			return START_NOT_STICKY;
+		}
+		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+				"Dynatweak");
+		wakeLock.acquire(5 * 60 * 1000L /*5 minutes*/);
+
 		final int hotplug = intent.getIntExtra("hotplug", BootReceiver.HOTPLUG_ALLCORES);
 		final int profile = intent.getIntExtra("profile", BootReceiver.PROFILE_BALANCED);
 		final Handler handler = new Handler();
 		new Thread(() -> {
+			boolean success = false;
 			try {
 				BootReceiver.tweak(hotplug, profile);
-				handler.post(() ->
-						Toast.makeText(TweakService.this, R.string.boot_success, Toast.LENGTH_SHORT).show());
+				success = true;
 			} catch (IOException e) {
 				Log.e(LOG_TAG, "TweakService exception", e);
-				handler.post(() ->
-						Toast.makeText(TweakService.this, R.string.boot_failed, Toast.LENGTH_SHORT).show());
 			} finally {
-				handler.post(TweakService.this::stopSelf);
+				final boolean arg = success;
+				handler.post(() -> TweakService.this.finish(arg));
 			}
-		});
+		}).start();
 		return START_NOT_STICKY;
 	}
 
