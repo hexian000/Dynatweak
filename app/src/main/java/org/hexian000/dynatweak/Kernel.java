@@ -487,9 +487,8 @@ class Kernel {
 			if (scaling_available_frequencies == null) {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
-			return fitFrequency((int) (scaling_available_frequencies.
-					                                                        get(scaling_available_frequencies.size() - 1)
-					* percentage));
+			return fitFrequency(
+					(int) (scaling_available_frequencies.get(scaling_available_frequencies.size() - 1) * percentage));
 		}
 
 		void setScalingMaxFrequency(int frequency) {
