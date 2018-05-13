@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".DynatweakService" />
+        <service android:name=".MonitorService" />
 
         <service android:name=".TweakService" />
 

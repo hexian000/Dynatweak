@@ -1159,7 +1159,7 @@ public class BootReceiver extends BroadcastReceiver {
 			}
 			final boolean dynatweak_service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
 			if (dynatweak_service) {
-				context.startService(new Intent(context, DynatweakService.class));
+				context.startService(new Intent(context, MonitorService.class));
 			}
 		} catch (Throwable ex) {
 			Log.e(LOG_TAG, "Boot receiver failed", ex);

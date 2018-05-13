@@ -1,5 +1,8 @@
 package org.hexian000.dynatweak;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -27,9 +30,10 @@ import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
  * Created by hexian on 2017/6/18.
  * System monitor service
  */
-public class DynatweakService extends Service {
+public class MonitorService extends Service {
+	public final static String CHANNEL_MONITOR = "monitor_overlay";
 
-	static DynatweakService instance = null;
+	static MonitorService instance = null;
 	private final Handler handler = new Handler();
 	private boolean visible = false;
 	private Timer timer = null;
@@ -71,6 +75,40 @@ public class DynatweakService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		Notification.Builder builder = new Notification.Builder(this.getApplicationContext());
+		builder.setContentIntent(null)
+		       .setContentTitle(getResources().getString(R.string.monitor_overlay))
+		       .setSmallIcon(R.drawable.ic_settings_black_24dp)
+		       .setWhen(System.currentTimeMillis())
+		       .setProgress(0, 0, true)
+		       .setOngoing(true);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			builder.setVisibility(Notification.VISIBILITY_PUBLIC);
+		}
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			// Android 8.0+
+			NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			if (manager != null) {
+				NotificationChannel channel = new NotificationChannel(CHANNEL_MONITOR,
+						getResources().getString(R.string.monitor_overlay), NotificationManager.IMPORTANCE_LOW);
+				channel.enableLights(false);
+				channel.enableVibration(false);
+				channel.setSound(null, null);
+
+				manager.createNotificationChannel(channel);
+				builder.setChannelId(CHANNEL_MONITOR);
+			}
+		} else {
+			builder.setPriority(Notification.PRIORITY_LOW)
+			       .setLights(0, 0, 0)
+			       .setVibrate(null)
+			       .setSound(null);
+		}
+
+		startForeground(startId, builder.build());
+
 		if (timer == null) {
 			timer = new Timer();
 			timer.scheduleAtFixedRate(new RefreshTask(), 0, 500);

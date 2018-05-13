@@ -2,6 +2,7 @@ package org.hexian000.dynatweak;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -53,11 +54,16 @@ public class MainActivity extends Activity {
 		checkBootTweak.setChecked(onBoot);
 		boolean service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
 		toggleService.setChecked(service);
-		if (service && DynatweakService.instance == null) {
-			startService(new Intent(this, DynatweakService.class));
+		if (service && MonitorService.instance == null) {
+			Intent intent1 = new Intent(this, MonitorService.class);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				startForegroundService(intent1);
+			} else {
+				startService(intent1);
+			}
 		}
-		if (!service && DynatweakService.instance != null) {
-			stopService(new Intent(this, DynatweakService.class));
+		if (!service && MonitorService.instance != null) {
+			stopService(new Intent(this, MonitorService.class));
 		}
 
 		checkBootTweak.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -118,14 +124,18 @@ public class MainActivity extends Activity {
 		spinnerHotplug.setSelection(Integer.parseInt(config.getProperty("hotplug_profile", "0")));
 
 		toggleService.setOnClickListener(view -> {
-			Properties config12 = ((DynatweakApp) getApplication()).getConfiguration();
-			Intent intent1 = new Intent(MainActivity.this, DynatweakService.class);
+			Properties configuration = ((DynatweakApp) getApplication()).getConfiguration();
+			Intent intent1 = new Intent(MainActivity.this, MonitorService.class);
 			if (toggleService.isChecked()) {
-				startService(intent1);
-				config12.setProperty("dynatweak_service", "enabled");
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+					startForegroundService(intent1);
+				} else {
+					startService(intent1);
+				}
+				configuration.setProperty("dynatweak_service", "enabled");
 			} else {
 				stopService(intent1);
-				config12.setProperty("dynatweak_service", "disabled");
+				configuration.setProperty("dynatweak_service", "disabled");
 			}
 			((DynatweakApp) getApplication()).saveConfiguration();
 		});

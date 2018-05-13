@@ -30,4 +30,5 @@
     <string name="monitor_loading">Loading…</string>
     <string name="apply_settings">应用</string>
     <string name="applying_settings">正在应用设置</string>
+    <string name="monitor_overlay">Dynatweak悬浮窗</string>
 </resources>
