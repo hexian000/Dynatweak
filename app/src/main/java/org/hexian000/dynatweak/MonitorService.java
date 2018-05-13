@@ -78,9 +78,7 @@ public class MonitorService extends Service {
 		Notification.Builder builder = new Notification.Builder(this.getApplicationContext());
 		builder.setContentIntent(null)
 		       .setContentTitle(getResources().getString(R.string.monitor_overlay))
-		       .setSmallIcon(R.drawable.ic_settings_black_24dp)
 		       .setWhen(System.currentTimeMillis())
-		       .setProgress(0, 0, true)
 		       .setOngoing(true);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
