@@ -54,7 +54,7 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setSysctl("kernel.random.write_wakeup_threshold", "512");
 
 		// VM
-		k.setSysctl("vm.dirty_expire_centisecs", "2000");
+		k.setSysctl("vm.dirty_expire_centisecs", "3000");
 		k.setSysctl("vm.dirty_writeback_centisecs", "1000");
 
 		// Misc
@@ -63,6 +63,7 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
 
 		// IO
+		k.setNode("/sys/module/sync/parameters/fsync_enabled", "N");
 		List<String> block = k.listBlockDevices();
 		for (String i : block) {
 			Log.i(LOG_TAG, "block device detected: " + i);
@@ -72,30 +73,26 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(i + "/queue/read_ahead_kb", "1024");
 				k.setNode(i + "/queue/rq_affinity", "1");
 				k.setNode(i + "/queue/rotational", "0");
-				k.setNode(i + "/queue/nr_requests", "128");
+				k.setNode(i + "/queue/nr_requests", "512");
 				List<String> schedulers = k.listBlockAvailableScheduler(i + "/queue/scheduler");
-				String scheduler = null;
 				if (schedulers.contains("maple")) {
-					scheduler = "maple";
+					k.setNode(i + "/queue/scheduler", "maple");
 				} else if (schedulers.contains("fiops")) {
-					scheduler = "fiops";
+					k.setNode(i + "/queue/scheduler", "fiops");
 				} else if (schedulers.contains("sioplus")) {
-					scheduler = "sioplus";
+					k.setNode(i + "/queue/scheduler", "sioplus");
 				} else if (schedulers.contains("sio")) {
-					scheduler = "sio";
+					k.setNode(i + "/queue/scheduler", "sio");
 				} else if (schedulers.contains("zen")) {
-					scheduler = "zen";
+					k.setNode(i + "/queue/scheduler", "zen");
 				} else if (schedulers.contains("bfq")) {
-					scheduler = "bfq";
+					k.setNode(i + "/queue/scheduler", "bfq");
+					k.setNode(i + "/queue/iosched/low_latency", "1");
+					k.setNode(i + "/queue/iosched/slice_idle", "0");
 				} else if (schedulers.contains("cfq")) {
-					scheduler = "cfq";
-				} else if (schedulers.contains("deadline")) {
-					scheduler = "deadline";
-				} else if (schedulers.contains("noop")) {
-					scheduler = "noop";
-				}
-				if (scheduler != null) {
-					k.setNode(i + "/queue/scheduler", scheduler);
+					k.setNode(i + "/queue/scheduler", "cfq");
+					k.setNode(i + "/queue/iosched/low_latency", "1");
+					k.setNode(i + "/queue/iosched/slice_idle", "0");
 				}
 			}
 		}
