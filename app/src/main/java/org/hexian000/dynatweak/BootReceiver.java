@@ -504,9 +504,13 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/timer_slack", "40000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
 				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
-				k.setNode(policy + "/interactive/use_migration_notif", "1");
-				k.setNode(policy + "/interactive/ignore_hispeed_on_notif", "1");
 				k.setNode(policy + "/interactive/max_freq_hysteresis", "80000");
+
+				// use scheduler tricks
+				k.setNode(policy + "/interactive/use_sched_load", "1");
+				k.setNode(policy + "/interactive/use_migration_notif", "1");
+				k.setNode(policy + "/interactive/fast_ramp_down", "1");
+				k.setNode(policy + "/interactive/enable_prediction", "1");
 				break;
 			case "blu_active":
 				k.setNode(policy + "/blu_active/above_hispeed_delay",
@@ -661,9 +665,13 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/timer_slack", "20000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
 				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
-				k.setNode(policy + "/interactive/use_migration_notif", "1");
-				k.setNode(policy + "/interactive/ignore_hispeed_on_notif", "1");
 				k.setNode(policy + "/interactive/max_freq_hysteresis", "80000");
+
+				// use scheduler tricks
+				k.setNode(policy + "/interactive/use_sched_load", "1");
+				k.setNode(policy + "/interactive/use_migration_notif", "1");
+				k.setNode(policy + "/interactive/fast_ramp_down", "1");
+				k.setNode(policy + "/interactive/enable_prediction", "1");
 				break;
 			case "blu_active":
 				k.setNode(policy + "/blu_active/above_hispeed_delay",
@@ -813,12 +821,16 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/timer_slack", "20000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
 				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
-				k.setNode(policy + "/interactive/use_migration_notif", "1");
-				k.setNode(policy + "/interactive/ignore_hispeed_on_notif", "1");
 				k.setNode(policy + "/interactive/max_freq_hysteresis", "40000");
+
+				// use scheduler tricks
+				k.setNode(policy + "/interactive/use_sched_load", "1");
+				k.setNode(policy + "/interactive/use_migration_notif", "1");
+				k.setNode(policy + "/interactive/fast_ramp_down", "0");
+				k.setNode(policy + "/interactive/enable_prediction", "1");
 				break;
 			case "blu_active":
-				k.setNode(policy + "/interactive/above_hispeed_delay",
+				k.setNode(policy + "/blu_active/above_hispeed_delay",
 						"20000 " + cpu.fitPercentage(0.85) + ":80000");
 				k.setNode(policy + "/blu_active/align_windows", "1");
 				k.setNode(policy + "/blu_active/fastlane", "1");
@@ -965,7 +977,7 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.8) + "");
 				k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0.5) + "");
 				k.setNode(policy + "/interactive/up_threshold_any_cpu_freq", cpu.fitPercentage(0.7) + "");
-				k.setNode(policy + "/blu_active/above_hispeed_delay",
+				k.setNode(policy + "/interactive/above_hispeed_delay",
 						"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
 								cpu.fitPercentage(0.7) + ":20000 " +
 								cpu.fitPercentage(0.85) + ":80000 " +
@@ -978,6 +990,12 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/timer_slack", "20000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
 				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
+
+				// use scheduler tricks
+				k.setNode(policy + "/interactive/use_sched_load", "1");
+				k.setNode(policy + "/interactive/use_migration_notif", "1");
+				k.setNode(policy + "/interactive/fast_ramp_down", "0");
+				k.setNode(policy + "/interactive/enable_prediction", "1");
 				break;
 			case "blu_active":
 				k.setNode(policy + "/blu_active/above_hispeed_delay",
