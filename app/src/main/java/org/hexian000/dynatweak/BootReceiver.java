@@ -30,17 +30,12 @@ public class BootReceiver extends BroadcastReceiver {
 	static final int HOTPLUG_DRIVER = 2;
 
 	static synchronized void tweak(int hotplug, int profile) throws IOException {
-		Log.d(LOG_TAG, "Start tweaking...");
+		Log.i(LOG_TAG, "Start tweaking...");
 		Kernel k = Kernel.getInstance();
 		Kernel.CpuCore cpu0 = k.cpuCores.get(0);
 
 		// CPU Hotplug
 		k.setNode("/proc/hps/enabled", "0");
-		k.setNode("/sys/module/blu_plug/parameters/enabled", "0");
-		k.setNode("/sys/module/autosmp/parameters/enabled", "N");
-		k.setNode("/sys/kernel/alucard_hotplug/hotplug_enable", "0");
-		k.setNode("/sys/kernel/msm_mpdecision/conf/enabled", "0");
-		k.setNode("/sys/module/msm_hotplug/msm_enabled", "0");
 
 		// Thermal
 		if (k.hasCoreControl()) {
@@ -79,12 +74,6 @@ public class BootReceiver extends BroadcastReceiver {
 					k.setNode(i + "/queue/scheduler", "maple");
 				} else if (schedulers.contains("fiops")) {
 					k.setNode(i + "/queue/scheduler", "fiops");
-				} else if (schedulers.contains("sioplus")) {
-					k.setNode(i + "/queue/scheduler", "sioplus");
-				} else if (schedulers.contains("sio")) {
-					k.setNode(i + "/queue/scheduler", "sio");
-				} else if (schedulers.contains("zen")) {
-					k.setNode(i + "/queue/scheduler", "zen");
 				} else if (schedulers.contains("bfq")) {
 					k.setNode(i + "/queue/scheduler", "bfq");
 					k.setNode(i + "/queue/iosched/low_latency", "1");
@@ -101,49 +90,54 @@ public class BootReceiver extends BroadcastReceiver {
 		List<String> allGovernors = cpu0.getScalingAvailableGovernors();
 		List<String> governor = new ArrayList<>();
 		List<Integer> profiles = new ArrayList<>();
-		final boolean multiCluster = allPolicy.size() > 1;
+		final boolean multiPolicy = allPolicy.size() > 1;
 
-		if (!multiCluster) { // 单簇处理器
-			Log.d(LOG_TAG, "single-cluster profile=" + profile);
+		if (!multiPolicy) {
+			Log.d(LOG_TAG, "single-policy profile=" + profile);
 			switch (profile) {
 			case PROFILE_DISABLED:
 				break;
 			case PROFILE_POWERSAVE: {
-				final String[] preferList = {"zzmoove"};
+				final String[] preferList = {};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			case PROFILE_BALANCED: {
-				final String[] preferList = {"blu_active", "zzmoove"};
+				final String[] preferList = {};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			case PROFILE_PERFORMANCE: {
-				final String[] preferList = {"ondemand", "blu_active", "zzmoove"};
+				final String[] preferList = {"ondemand"};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			case PROFILE_GAMING: {
-				final String[] preferList = {"performance", "ondemand", "blu_active", "zzmoove"};
+				final String[] preferList = {"performance", "ondemand"};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			}
 			profiles.add(profile);
-		} else { // 多簇处理器
-			Log.d(LOG_TAG, "multi-cluster profile=" + profile);
+		} else {
+			Log.d(LOG_TAG, "multi-policy profile=" + profile);
 			for (int i = 0; i < allPolicy.size(); i++) {
 				switch (profile) {
 				case PROFILE_DISABLED:
 					break;
 				case PROFILE_POWERSAVE: {
-					final String[] preferList = {"zzmoove"};
-					governor.add(preferGovernor(allGovernors, preferList));
+					if (i == 0) {
+						final String[] preferList = {};
+						governor.add(preferGovernor(allGovernors, preferList));
+					} else {
+						final String[] preferList = {"powersave"};
+						governor.add(preferGovernor(allGovernors, preferList));
+					}
 					profiles.add(PROFILE_POWERSAVE);
 					break;
 				}
 				case PROFILE_BALANCED: {
-					final String[] preferList = {"blu_active", "zzmoove"};
+					final String[] preferList = {};
 					governor.add(preferGovernor(allGovernors, preferList));
 					if (i == 0) {
 						profiles.add(PROFILE_BALANCED);
@@ -154,18 +148,18 @@ public class BootReceiver extends BroadcastReceiver {
 				}
 				case PROFILE_PERFORMANCE: {
 					if (i == 0) {
-						final String[] preferList = {"ondemand", "blu_active", "zzmoove"};
+						final String[] preferList = {"ondemand"};
 						governor.add(preferGovernor(allGovernors, preferList));
 						profiles.add(PROFILE_PERFORMANCE);
 					} else {
-						final String[] preferList = {"blu_active", "zzmoove"};
+						final String[] preferList = {};
 						governor.add(preferGovernor(allGovernors, preferList));
 						profiles.add(PROFILE_BALANCED);
 					}
 					break;
 				}
 				case PROFILE_GAMING: {
-					final String[] preferList = {"performance", "ondemand", "blu_active", "zzmoove"};
+					final String[] preferList = {"performance", "ondemand"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					profiles.add(PROFILE_GAMING);
 					break;
@@ -329,7 +323,7 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
 		StringBuilder boostFreq = new StringBuilder(), boostFreq_s2 = new StringBuilder();
 		for (Kernel.CpuCore cpu : k.cpuCores) {
-			if (multiCluster) {
+			if (multiPolicy) {
 				if (cpu.getCluster() == 0 && cpu.getId() < 2) {
 					boostFreq.append(cpu.getId()).append(':').append(cpu.fitPercentage(0.5)).append(' ');
 					boostFreq_s2.append(cpu.getId()).append(':').append(cpu.fitPercentage(0.3)).append(' ');
@@ -416,7 +410,7 @@ public class BootReceiver extends BroadcastReceiver {
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 			break;
 		case HOTPLUG_LITTLECORES: // little cluster or dual-core
-			if (multiCluster) {
+			if (multiPolicy) {
 				int mask = 0, count = 0;
 				for (Kernel.CpuCore cpu : k.cpuCores) {
 					boolean set;
@@ -447,11 +441,7 @@ public class BootReceiver extends BroadcastReceiver {
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
 			break;
 		case HOTPLUG_DRIVER: // use hotplug driver
-			final String[][] driverNodes = {{"/sys/kernel/alucard_hotplug/hotplug_enable", "1"},
-					{"/sys/module/msm_hotplug/msm_enabled", "1"},
-					{"/sys/module/blu_plug/parameters/enabled", "1"},
-					{"/sys/module/autosmp/parameters/enabled", "Y"},
-					{"/sys/kernel/msm_mpdecision/conf/enabled", "1"},
+			final String[][] driverNodes = {
 					{"/proc/hps/enabled", "1"}
 			};
 			boolean success = false;
@@ -469,7 +459,7 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 		k.commit();
 
-		Log.d(LOG_TAG, "Finished tweaking...");
+		Log.i(LOG_TAG, "Finished tweaking...");
 	}
 
 	private static String preferGovernor(List<String> allGovernors, String[] names) {
@@ -512,137 +502,6 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/fast_ramp_down", "1");
 				k.setNode(policy + "/interactive/enable_prediction", "1");
 				break;
-			case "blu_active":
-				k.setNode(policy + "/blu_active/above_hispeed_delay",
-						"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
-								cpu.fitPercentage(0.7) + ":20000 " +
-								cpu.fitPercentage(0.85) + ":80000 " +
-								cpu.fitPercentage(1) + ":100000");
-				k.setNode(policy + "/blu_active/align_windows", "1");
-				k.setNode(policy + "/blu_active/fastlane", "0");
-				k.setNode(policy + "/blu_active/fastlane_threshold", "80");
-				k.setNode(policy + "/blu_active/go_hispeed_load", "90");
-				k.setNode(policy + "/blu_active/hispeed_freq", cpu.fitPercentage(0.5) + "");
-				k.setNode(policy + "/blu_active/io_is_busy", "0");
-				k.setNode(policy + "/blu_active/min_sample_time", "20000");
-				k.setNode(policy + "/blu_active/target_loads",
-						"85 " + cpu.fitPercentage(0.6) + ":90 " +
-								cpu.fitPercentage(0.8) + ":70 " +
-								cpu.fitPercentage(0.9) + ":95");
-				k.setNode(policy + "/blu_active/timer_rate", "20000");
-				k.setNode(policy + "/blu_active/timer_slack", "20000");
-				break;
-			case "zzmoove":
-				k.setNode(policy + "/zzmoove/auto_adjust_freq_thresholds", "0");
-				k.setNode(policy + "/zzmoove/disable_hotplug", "1");
-				k.setNode(policy + "/zzmoove/disable_hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/down_threshold", "40");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug1", "45");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug2", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug3", "65");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug4", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug5", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug6", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug7", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq1", cpu.fitFrequency(652800) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq2", cpu.fitFrequency(960000) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq3", cpu.fitFrequency(1267200) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_sleep", "60");
-				k.setNode(policy + "/zzmoove/early_demand", "0");
-				k.setNode(policy + "/zzmoove/early_demand_sleep", "1");
-				k.setNode(policy + "/zzmoove/fast_scaling_up", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_down", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_up", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_down", "0");
-				k.setNode(policy + "/zzmoove/afs_threshold1", "30");
-				k.setNode(policy + "/zzmoove/afs_threshold2", "50");
-				k.setNode(policy + "/zzmoove/afs_threshold3", "70");
-				k.setNode(policy + "/zzmoove/afs_threshold4", "90");
-				k.setNode(policy + "/zzmoove/freq_limit", "0");
-				k.setNode(policy + "/zzmoove/freq_limit_sleep", cpu.fitFrequency(729600) + "");
-				k.setNode(policy + "/zzmoove/grad_up_threshold", "50");
-				k.setNode(policy + "/zzmoove/grad_up_threshold_sleep", "28");
-				k.setNode(policy + "/zzmoove/hotplug_block_up_cycles", "2");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_block_down_cycles", "20");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_up", "0");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_down", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_threshold", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/hotplug_engage_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_max_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_min_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_lock", "0");
-				k.setNode(policy + "/zzmoove/ignore_nice_load", "0");
-				k.setNode(policy + "/zzmoove/sampling_down_factor", "1");
-				k.setNode(policy + "/zzmoove/sampling_down_max_momentum", "0");
-				k.setNode(policy + "/zzmoove/sampling_down_momentum_sensitivity", "50");
-				k.setNode(policy + "/zzmoove/sampling_rate", "100000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle", "180000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_delay", "0");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_threshold", "40");
-				k.setNode(policy + "/zzmoove/sampling_rate_sleep_multiplier", "4");
-				k.setNode(policy + "/zzmoove/scaling_block_cycles", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_trip_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_threshold", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_force_down", "2");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_freq", cpu.fitFrequency(1958400) + "");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_up_threshold", "95");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_down_threshold", "90");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_freq", cpu.fitFrequency(652800) + "");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_up_threshold", "20");
-				k.setNode(policy + "/zzmoove/scaling_proportional", "1");
-				k.setNode(policy + "/zzmoove/inputboost_cycles", "0");
-				k.setNode(policy + "/zzmoove/inputboost_up_threshold", "80");
-				k.setNode(policy + "/zzmoove/inputboost_punch_cycles", "20");
-				k.setNode(policy + "/zzmoove/inputboost_punch_freq", cpu.fitFrequency(1728000) + "");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingerdown", "1");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingermove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_epenmove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_up_threshold", "40");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_cores", "3");
-				k.setNode(policy + "/zzmoove/music_max_freq", cpu.fitFrequency(1497600) + "");
-				k.setNode(policy + "/zzmoove/music_min_freq", cpu.fitFrequency(422400) + "");
-				k.setNode(policy + "/zzmoove/music_min_cores", "2");
-				k.setNode(policy + "/zzmoove/smooth_up", "75");
-				k.setNode(policy + "/zzmoove/smooth_up_sleep", "100");
-				k.setNode(policy + "/zzmoove/up_threshold", "95");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug1", "60");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug2", "80");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug3", "98");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug4", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug5", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug6", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug7", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq1", cpu.fitFrequency(729600) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq2", cpu.fitFrequency(1190400) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq3", cpu.fitFrequency(1574400) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_sleep", "100");
-				break;
 			case "ondemand":
 				// should never happen
 				break;
@@ -673,132 +532,6 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/fast_ramp_down", "1");
 				k.setNode(policy + "/interactive/enable_prediction", "1");
 				break;
-			case "blu_active":
-				k.setNode(policy + "/blu_active/above_hispeed_delay",
-						"20000 " + cpu.fitPercentage(0.85) + ":80000");
-				k.setNode(policy + "/blu_active/align_windows", "1");
-				k.setNode(policy + "/blu_active/fastlane", "1");
-				k.setNode(policy + "/blu_active/fastlane_threshold", "80");
-				k.setNode(policy + "/blu_active/go_hispeed_load", "90");
-				k.setNode(policy + "/blu_active/hispeed_freq", cpu.fitPercentage(0.5) + "");
-				k.setNode(policy + "/blu_active/io_is_busy", "0");
-				k.setNode(policy + "/blu_active/min_sample_time", "20000");
-				k.setNode(policy + "/blu_active/target_loads",
-						"80 " + cpu.fitFrequency(1000000) + ":90 ");
-				k.setNode(policy + "/blu_active/timer_rate", "20000");
-				k.setNode(policy + "/blu_active/timer_slack", "20000");
-				break;
-			case "zzmoove":
-				k.setNode(policy + "/zzmoove/auto_adjust_freq_thresholds", "0");
-				k.setNode(policy + "/zzmoove/disable_hotplug", "1");
-				k.setNode(policy + "/zzmoove/disable_hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/down_threshold", "52");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug1", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug2", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug3", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug4", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug5", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug6", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug7", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq1", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq2", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq3", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_sleep", "44");
-				k.setNode(policy + "/zzmoove/early_demand", "0");
-				k.setNode(policy + "/zzmoove/early_demand_sleep", "1");
-				k.setNode(policy + "/zzmoove/fast_scaling_up", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_down", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_up", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_down", "0");
-				k.setNode(policy + "/zzmoove/autofastscalingstepone", "25");
-				k.setNode(policy + "/zzmoove/autofastscalingsteptwo", "50");
-				k.setNode(policy + "/zzmoove/autofastscalingstepthree", "75");
-				k.setNode(policy + "/zzmoove/autofastscalingstepfour", "90");
-				k.setNode(policy + "/zzmoove/freq_limit", "0");
-				k.setNode(policy + "/zzmoove/freq_limit_sleep", "0");
-				k.setNode(policy + "/zzmoove/grad_up_threshold", "25");
-				k.setNode(policy + "/zzmoove/grad_up_threshold_sleep", "28");
-				k.setNode(policy + "/zzmoove/hotplug_block_up_cycles", "2");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_block_down_cycles", "20");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_up", "0");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_down", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_threshold", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_sleep", "0");
-				k.setNode(policy + "/zzmoove/hotplug_engage_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_max_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_min_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_lock", "0");
-				k.setNode(policy + "/zzmoove/ignore_nice_load", "0");
-				k.setNode(policy + "/zzmoove/sampling_down_factor", "1");
-				k.setNode(policy + "/zzmoove/sampling_down_max_momentum", "0");
-				k.setNode(policy + "/zzmoove/sampling_down_momentum_sensitivity", "50");
-				k.setNode(policy + "/zzmoove/sampling_rate", "100000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle", "180000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_delay", "0");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_threshold", "40");
-				k.setNode(policy + "/zzmoove/sampling_rate_sleep_multiplier", "2");
-				k.setNode(policy + "/zzmoove/scaling_block_cycles", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_trip_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_freq", cpu.fitFrequency(1728000) + "");
-				k.setNode(policy + "/zzmoove/scaling_block_threshold", "10");
-				k.setNode(policy + "/zzmoove/scaling_block_force_down", "2");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_up_threshold", "95");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_down_threshold", "90");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_up_threshold", "30");
-				k.setNode(policy + "/zzmoove/scaling_proportional", "0");
-				k.setNode(policy + "/zzmoove/inputboost_cycles", "0");
-				k.setNode(policy + "/zzmoove/inputboost_up_threshold", "80");
-				k.setNode(policy + "/zzmoove/inputboost_punch_cycles", "20");
-				k.setNode(policy + "/zzmoove/inputboost_punch_freq", cpu.fitFrequency(1728000) + "");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingerdown", "1");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingermove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_epenmove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_up_threshold", "40");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_cores", "3");
-				k.setNode(policy + "/zzmoove/music_max_freq", cpu.fitFrequency(1497600) + "");
-				k.setNode(policy + "/zzmoove/music_min_freq", cpu.fitFrequency(422400) + "");
-				k.setNode(policy + "/zzmoove/music_min_cores", "2");
-				k.setNode(policy + "/zzmoove/smooth_up", "75");
-				k.setNode(policy + "/zzmoove/smooth_up_sleep", "100");
-				k.setNode(policy + "/zzmoove/up_threshold", "70");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug1", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug2", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug3", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug4", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug5", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug6", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug7", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq1", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq2", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq3", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_sleep", "90");
-				break;
 			case "ondemand":
 				// should never happen
 				break;
@@ -828,132 +561,6 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/use_migration_notif", "1");
 				k.setNode(policy + "/interactive/fast_ramp_down", "0");
 				k.setNode(policy + "/interactive/enable_prediction", "1");
-				break;
-			case "blu_active":
-				k.setNode(policy + "/blu_active/above_hispeed_delay",
-						"20000 " + cpu.fitPercentage(0.85) + ":80000");
-				k.setNode(policy + "/blu_active/align_windows", "1");
-				k.setNode(policy + "/blu_active/fastlane", "1");
-				k.setNode(policy + "/blu_active/fastlane_threshold", "25");
-				k.setNode(policy + "/blu_active/go_hispeed_load", "80");
-				k.setNode(policy + "/blu_active/hispeed_freq", cpu.fitPercentage(0.6) + "");
-				k.setNode(policy + "/blu_active/io_is_busy", "0");
-				k.setNode(policy + "/blu_active/min_sample_time", "20000");
-				k.setNode(policy + "/blu_active/target_loads",
-						"60 " + cpu.fitFrequency(1000000) + ":80 ");
-				k.setNode(policy + "/blu_active/timer_rate", "20000");
-				k.setNode(policy + "/blu_active/timer_slack", "20000");
-				break;
-			case "zzmoove":
-				k.setNode(policy + "/zzmoove/auto_adjust_freq_thresholds", "0");
-				k.setNode(policy + "/zzmoove/disable_hotplug", "1");
-				k.setNode(policy + "/zzmoove/disable_hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/down_threshold", "20");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug1", "25");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug2", "35");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug3", "45");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug4", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug5", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug6", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug7", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq1", cpu.fitFrequency(300000) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq2", cpu.fitFrequency(1190400) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq3", cpu.fitFrequency(1574400) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_sleep", "60");
-				k.setNode(policy + "/zzmoove/early_demand", "1");
-				k.setNode(policy + "/zzmoove/early_demand_sleep", "1");
-				k.setNode(policy + "/zzmoove/fast_scaling_up", "1");
-				k.setNode(policy + "/zzmoove/fast_scaling_down", "1");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_up", "2");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_down", "0");
-				k.setNode(policy + "/zzmoove/afs_threshold1", "30");
-				k.setNode(policy + "/zzmoove/afs_threshold2", "50");
-				k.setNode(policy + "/zzmoove/afs_threshold3", "70");
-				k.setNode(policy + "/zzmoove/afs_threshold4", "90");
-				k.setNode(policy + "/zzmoove/freq_limit", "0");
-				k.setNode(policy + "/zzmoove/freq_limit_sleep", cpu.fitFrequency(729600) + "");
-				k.setNode(policy + "/zzmoove/grad_up_threshold", "25");
-				k.setNode(policy + "/zzmoove/grad_up_threshold_sleep", "28");
-				k.setNode(policy + "/zzmoove/hotplug_block_up_cycles", "2");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_block_down_cycles", "20");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_up", "0");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_down", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_threshold", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/hotplug_engage_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_max_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_min_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_lock", "0");
-				k.setNode(policy + "/zzmoove/ignore_nice_load", "0");
-				k.setNode(policy + "/zzmoove/sampling_down_factor", "4");
-				k.setNode(policy + "/zzmoove/sampling_down_max_momentum", "50");
-				k.setNode(policy + "/zzmoove/sampling_down_momentum_sensitivity", "25");
-				k.setNode(policy + "/zzmoove/sampling_rate", "60000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle", "100000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_delay", "0");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_threshold", "40");
-				k.setNode(policy + "/zzmoove/sampling_rate_sleep_multiplier", "4");
-				k.setNode(policy + "/zzmoove/scaling_block_cycles", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_trip_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_threshold", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_force_down", "2");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_up_threshold", "95");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_down_threshold", "90");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_up_threshold", "0");
-				k.setNode(policy + "/zzmoove/scaling_proportional", "0");
-				k.setNode(policy + "/zzmoove/inputboost_cycles", "0");
-				k.setNode(policy + "/zzmoove/inputboost_up_threshold", "80");
-				k.setNode(policy + "/zzmoove/inputboost_punch_cycles", "20");
-				k.setNode(policy + "/zzmoove/inputboost_punch_freq", cpu.fitFrequency(1728000) + "");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingerdown", "1");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingermove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_epenmove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_up_threshold", "40");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_cores", "3");
-				k.setNode(policy + "/zzmoove/music_max_freq", cpu.fitFrequency(1497600) + "");
-				k.setNode(policy + "/zzmoove/music_min_freq", cpu.fitFrequency(422400) + "");
-				k.setNode(policy + "/zzmoove/music_min_cores", "2");
-				k.setNode(policy + "/zzmoove/smooth_up", "70");
-				k.setNode(policy + "/zzmoove/smooth_up_sleep", "100");
-				k.setNode(policy + "/zzmoove/up_threshold", "60");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug1", "65");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug2", "75");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug3", "85");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug4", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug5", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug6", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug7", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq1", cpu.fitFrequency(422400) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq2", cpu.fitFrequency(1267200) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq3", cpu.fitFrequency(1728000) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_sleep", "100");
 				break;
 			case "ondemand":
 				k.setNode(policy + "/ondemand/down_differential", "2");
@@ -996,135 +603,6 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/use_migration_notif", "1");
 				k.setNode(policy + "/interactive/fast_ramp_down", "0");
 				k.setNode(policy + "/interactive/enable_prediction", "1");
-				break;
-			case "blu_active":
-				k.setNode(policy + "/blu_active/above_hispeed_delay",
-						"20000 " + cpu.fitPercentage(0.5) + ":40000 " +
-								cpu.fitPercentage(0.7) + ":20000 " +
-								cpu.fitPercentage(0.85) + ":80000 " +
-								cpu.fitPercentage(1) + ":100000");
-				k.setNode(policy + "/blu_active/align_windows", "1");
-				k.setNode(policy + "/blu_active/fastlane", "1");
-				k.setNode(policy + "/blu_active/fastlane_threshold", "25");
-				k.setNode(policy + "/blu_active/go_hispeed_load", "80");
-				k.setNode(policy + "/blu_active/hispeed_freq", cpu.fitPercentage(0.8) + "");
-				k.setNode(policy + "/blu_active/io_is_busy", "0");
-				k.setNode(policy + "/blu_active/min_sample_time", "20000");
-				k.setNode(policy + "/blu_active/target_loads", "50");
-				k.setNode(policy + "/blu_active/timer_rate", "20000");
-				k.setNode(policy + "/blu_active/timer_slack", "20000");
-				break;
-			case "zzmoove":
-				k.setNode(policy + "/zzmoove/auto_adjust_freq_thresholds", "0");
-				k.setNode(policy + "/zzmoove/disable_hotplug", "1");
-				k.setNode(policy + "/zzmoove/disable_hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/down_threshold", "20");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug1", "25");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug2", "35");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug3", "45");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug4", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug5", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug6", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug7", "55");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq1", cpu.fitFrequency(422400) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq2", cpu.fitFrequency(1190400) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq3", cpu.fitFrequency(1574400) + "");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/down_threshold_sleep", "60");
-				k.setNode(policy + "/zzmoove/early_demand", "1");
-				k.setNode(policy + "/zzmoove/early_demand_sleep", "1");
-				k.setNode(policy + "/zzmoove/fast_scaling_up", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_down", "0");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_up", "2");
-				k.setNode(policy + "/zzmoove/fast_scaling_sleep_down", "0");
-				k.setNode(policy + "/zzmoove/afs_threshold1", "30");
-				k.setNode(policy + "/zzmoove/afs_threshold2", "50");
-				k.setNode(policy + "/zzmoove/afs_threshold3", "70");
-				k.setNode(policy + "/zzmoove/afs_threshold4", "90");
-				k.setNode(policy + "/zzmoove/freq_limit", "0");
-				k.setNode(policy + "/zzmoove/freq_limit_sleep", cpu.fitFrequency(729600) + "");
-				k.setNode(policy + "/zzmoove/grad_up_threshold", "25");
-				k.setNode(policy + "/zzmoove/grad_up_threshold_sleep", "28");
-				k.setNode(policy + "/zzmoove/hotplug_block_up_cycles", "2");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_up_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_block_down_cycles", "20");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug1", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug2", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug3", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug4", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug5", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug6", "1");
-				k.setNode(policy + "/zzmoove/block_down_multiplier_hotplug7", "1");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_up", "0");
-				k.setNode(policy + "/zzmoove/hotplug_stagger_down", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_threshold", "0");
-				k.setNode(policy + "/zzmoove/hotplug_idle_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_sleep", "1");
-				k.setNode(policy + "/zzmoove/hotplug_engage_freq", "0");
-				k.setNode(policy + "/zzmoove/hotplug_max_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_min_limit", "0");
-				k.setNode(policy + "/zzmoove/hotplug_lock", "0");
-				k.setNode(policy + "/zzmoove/ignore_nice_load", "0");
-				k.setNode(policy + "/zzmoove/sampling_down_factor", "4");
-				k.setNode(policy + "/zzmoove/sampling_down_max_momentum", "60");
-				k.setNode(policy + "/zzmoove/sampling_down_momentum_sensitivity", "20");
-				k.setNode(policy + "/zzmoove/sampling_rate", "60000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle", "100000");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_delay", "0");
-				k.setNode(policy + "/zzmoove/sampling_rate_idle_threshold", "40");
-				k.setNode(policy + "/zzmoove/sampling_rate_sleep_multiplier", "4");
-				k.setNode(policy + "/zzmoove/scaling_block_cycles", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_temp", "65");
-				k.setNode(policy + "/zzmoove/scaling_block_cycles", "15");
-				k.setNode(policy + "/zzmoove/scaling_trip_temp", "0");
-				k.setNode(policy + "/zzmoove/scaling_block_freq", cpu.fitFrequency(1574400) + "");
-				k.setNode(policy + "/zzmoove/scaling_block_threshold", "5");
-				k.setNode(policy + "/zzmoove/scaling_block_force_down", "3");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_up_threshold", "95");
-				k.setNode(policy + "/zzmoove/scaling_fastdown_down_threshold", "90");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_freq", "0");
-				k.setNode(policy + "/zzmoove/scaling_responsiveness_up_threshold", "0");
-				k.setNode(policy + "/zzmoove/scaling_proportional", "1");
-				k.setNode(policy + "/zzmoove/inputboost_cycles", "0");
-				k.setNode(policy + "/zzmoove/inputboost_up_threshold", "80");
-				k.setNode(policy + "/zzmoove/inputboost_punch_cycles", "20");
-				k.setNode(policy + "/zzmoove/inputboost_punch_freq", cpu.fitFrequency(1728000) + "");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingerdown", "1");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_fingermove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_punch_on_epenmove", "0");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_up_threshold", "40");
-				k.setNode(policy + "/zzmoove/inputboost_typingbooster_cores", "3");
-				k.setNode(policy + "/zzmoove/music_max_freq", cpu.fitFrequency(1497600) + "");
-				k.setNode(policy + "/zzmoove/music_min_freq", cpu.fitFrequency(422400) + "");
-				k.setNode(policy + "/zzmoove/music_min_cores", "2");
-				k.setNode(policy + "/zzmoove/smooth_up", "70");
-				k.setNode(policy + "/zzmoove/smooth_up_sleep", "100");
-				k.setNode(policy + "/zzmoove/up_threshold", "60");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug1", "65");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug2", "75");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug3", "85");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug4", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug5", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug6", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug7", "68");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq1", cpu.fitFrequency(652800) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq2", cpu.fitFrequency(1267200) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq3", cpu.fitFrequency(1958400) + "");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq4", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq5", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq6", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_hotplug_freq7", "0");
-				k.setNode(policy + "/zzmoove/up_threshold_sleep", "100");
 				break;
 			case "ondemand":
 				k.setNode(policy + "/ondemand/down_differential", "2");
