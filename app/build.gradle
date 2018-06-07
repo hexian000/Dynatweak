@@ -10,12 +10,18 @@ android {
         versionCode 46
         versionName "5.4.1"
     }
-    buildTypes {
-        release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    flavorDimensions 'overlay'
+    productFlavors {
+        std {
+            dimension 'overlay'
         }
         tz {
+            dimension 'overlay'
+            versionNameSuffix  '-tz'
+        }
+    }
+    buildTypes {
+        release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
