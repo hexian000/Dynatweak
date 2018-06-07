@@ -273,7 +273,7 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Profiles.POWERSAVE:
 			k.setSysctl("kernel.sched_downmigrate", "80");
 			k.setSysctl("kernel.sched_upmigrate", "95");
-			k.setSysctl("kernel.sched_spill_nr_run", "10");
+			k.setSysctl("kernel.sched_spill_nr_run", "2");
 			k.setSysctl("kernel.sched_spill_load", "90");
 			break;
 		case Dynatweak.Profiles.BALANCED:
@@ -285,19 +285,19 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Profiles.PERFORMANCE:
 			k.setSysctl("kernel.sched_downmigrate", "20");
 			k.setSysctl("kernel.sched_upmigrate", "80");
-			k.setSysctl("kernel.sched_spill_nr_run", "2");
+			k.setSysctl("kernel.sched_spill_nr_run", "8");
 			k.setSysctl("kernel.sched_spill_load", "95");
 			break;
 		case Dynatweak.Profiles.GAMING:
 			k.setSysctl("kernel.sched_downmigrate", "0");
 			k.setSysctl("kernel.sched_upmigrate", "60");
-			k.setSysctl("kernel.sched_spill_nr_run", "2");
+			k.setSysctl("kernel.sched_spill_nr_run", "8");
 			k.setSysctl("kernel.sched_spill_load", "95");
 			break;
 		}
 
 		// MSM Performance
-		if (k.hasNode("/sys/module/msm_performance/parameters")) {
+		if (k.hasNodeByRoot("/sys/module/msm_performance/parameters")) {
 			Log.i(LOG_TAG, "msm_performance detected");
 			final String msm_performance = "/sys/module/msm_performance/parameters/";
 			StringBuilder cpu_max_freq = new StringBuilder();
@@ -308,8 +308,17 @@ public class BootReceiver extends BroadcastReceiver {
 			}
 			k.setNode(msm_performance + "cpu_max_freq", cpu_max_freq.toString());
 			k.setNode(msm_performance + "cpu_min_freq", cpu_min_freq.toString());
-			k.setNode(msm_performance + "touchboost", "0");
 			k.setNode(msm_performance + "workload_detect", "1");
+			switch (profile) {
+			case Dynatweak.Profiles.PERFORMANCE:
+			case Dynatweak.Profiles.GAMING:
+				k.setNode(msm_performance + "touchboost", "1");
+				k.setNode(msm_performance + "workload_modes/aggr_mode", "1");
+			default:
+				k.setNode(msm_performance + "touchboost", "0");
+				k.setNode(msm_performance + "workload_modes/aggr_mode", "0");
+			}
+			k.setNode(msm_performance + "workload_modes/aggr_iobusy", "0");
 		}
 
 		// CPU Boost
