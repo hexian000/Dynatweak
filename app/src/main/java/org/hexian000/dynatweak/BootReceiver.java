@@ -142,7 +142,7 @@ public class BootReceiver extends BroadcastReceiver {
 				}
 				case Dynatweak.Profiles.PERFORMANCE: {
 					if (i == 0) {
-						final String[] preferList = {"ondemand"};
+						final String[] preferList = {};
 						governor.add(preferGovernor(allGovernors, preferList));
 						profiles.add(Dynatweak.Profiles.PERFORMANCE);
 					} else {
@@ -153,7 +153,7 @@ public class BootReceiver extends BroadcastReceiver {
 					break;
 				}
 				case Dynatweak.Profiles.GAMING: {
-					final String[] preferList = {"performance", "ondemand"};
+					final String[] preferList = {"performance"};
 					governor.add(preferGovernor(allGovernors, preferList));
 					profiles.add(Dynatweak.Profiles.GAMING);
 					break;
