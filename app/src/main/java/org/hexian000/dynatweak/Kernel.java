@@ -52,7 +52,6 @@ class Kernel {
 		case 1972:
 		case 1973:
 		case 1974:  // Xiaomi Mi 3/4/Note
-			runAsRoot("stop mpdecision");
 			try {
 				socTemp = new AdaptiveTempReader(getThermalZone(0));
 			} catch (Throwable ignore) {
@@ -63,7 +62,6 @@ class Kernel {
 			}
 			break;
 		case 1812:  // Xiaomi Mi 2/2S
-			runAsRoot("stop mpdecision");
 			try {
 				socTemp = new AdaptiveTempReader(getThermalZone(0));
 			} catch (Throwable ignore) {
@@ -342,7 +340,7 @@ class Kernel {
 		for (String line : result) {
 			Log.d(LOG_TAG, "STDOUT: " + line);
 		}
-		commands = new ArrayList<>();
+		commands.clear();
 	}
 
 	void setNode(String path, String value) {
