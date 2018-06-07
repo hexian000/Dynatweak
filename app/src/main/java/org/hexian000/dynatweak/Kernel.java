@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
+import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -20,7 +20,7 @@ class Kernel {
 	private static Kernel instance = null;
 	final List<CpuCore> cpuCores;
 	private final List<ClusterPolicy> clusterPolicies;
-	private List<String> commands;
+	private final List<String> commands;
 	private int raw_id;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
@@ -121,31 +121,31 @@ class Kernel {
 				case 1972:
 				case 1973:
 				case 1974:  // Xiaomi Mi 3/4/Note
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							getThermalZone(cpuId + 5));
 					break;
 				case 70:  // Xiaomi Mi 5X
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							getThermalZone(cpuId + 10));
 					break;
 				case 94:  // ONEPLUS A5000
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							getThermalZone(cpuId + 11));
 					break;
 				case 95:  // ONEPLUS A3010
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							getThermalZone(cpuId + 5));
 					break;
 				case 2375:  // Xiaomi Mi 5
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							getThermalZone(cpuId + 9));
 					break;
 				case 1812:  // Xiaomi Mi 2/2S
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							getThermalZone(cpuId + 7));
 					break;
 				default:
-					cpu = new CpuCore(cpuId, "/sys/devices/system/cpu",
+					cpu = new CpuCore(cpuId,
 							null);
 					break;
 				}
@@ -425,7 +425,7 @@ class Kernel {
 		private List<Integer> scaling_available_frequencies = null;
 		private int cluster;
 
-		CpuCore(int id, String path, String tempNode) {
+		CpuCore(int id, String tempNode) {
 			if (tempNode != null) {
 				// grantRead(tempNode);
 				try {
@@ -433,7 +433,7 @@ class Kernel {
 				} catch (Throwable ignore) {
 				}
 			}
-			this.path = path + "/cpu" + id;
+			this.path = "/sys/devices/system/cpu/cpu" + id;
 			this.id = id;
 		}
 

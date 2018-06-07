@@ -11,7 +11,7 @@ import android.widget.*;
 
 import java.util.Properties;
 
-import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
+import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
 public class MainActivity extends Activity {
 	private ProgressBar progressBar;
@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
 		final Button buttonApply = findViewById(R.id.buttonApply);
 
 		// 加载设置
-		Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+		Properties config = ((Dynatweak) getApplication()).getConfiguration();
 		boolean onBoot = config.getProperty("smooth_interactive", "disabled").equals("enabled");
 		checkBootTweak.setChecked(onBoot);
 		boolean service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
@@ -67,14 +67,14 @@ public class MainActivity extends Activity {
 		}
 
 		checkBootTweak.setOnCheckedChangeListener((buttonView, isChecked) -> {
-			Properties config1 = ((DynatweakApp) getApplication()).getConfiguration();
+			Properties config1 = ((Dynatweak) getApplication()).getConfiguration();
 			if (isChecked) {
 				config1.setProperty("smooth_interactive", "enabled");
 			} else {
 				config1.setProperty("smooth_interactive", "disabled");
 				Toast.makeText(MainActivity.this, R.string.reboot_suggest, Toast.LENGTH_SHORT).show();
 			}
-			((DynatweakApp) getApplication()).saveConfiguration();
+			((Dynatweak) getApplication()).saveConfiguration();
 		});
 
 		// 事件响应
@@ -82,27 +82,27 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+				Properties config = ((Dynatweak) getApplication()).getConfiguration();
 				config.setProperty("interactive_profile", i + "");
-				((DynatweakApp) getApplication()).saveConfiguration();
+				((Dynatweak) getApplication()).saveConfiguration();
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
-				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
-				config.setProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "");
-				((DynatweakApp) getApplication()).saveConfiguration();
+				Properties config = ((Dynatweak) getApplication()).getConfiguration();
+				config.setProperty("interactive_profile", Dynatweak.Profiles.DEFAULT + "");
+				((Dynatweak) getApplication()).saveConfiguration();
 			}
 		});
 		spinnerProfile.setSelection(
-				Integer.parseInt(config.getProperty("interactive_profile", BootReceiver.PROFILE_BALANCED + "")));
+				Integer.parseInt(config.getProperty("interactive_profile", Dynatweak.Profiles.DEFAULT + "")));
 
 		spinnerHotplug.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			boolean first = true;
 
 			@Override
 			public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+				Properties config = ((Dynatweak) getApplication()).getConfiguration();
 				if (first) {
 					first = false;
 					return;
@@ -111,20 +111,20 @@ public class MainActivity extends Activity {
 					config.setProperty("thermal_service", "disabled");
 				}
 				config.setProperty("hotplug_profile", i + "");
-				((DynatweakApp) getApplication()).saveConfiguration();
+				((Dynatweak) getApplication()).saveConfiguration();
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> adapterView) {
-				Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+				Properties config = ((Dynatweak) getApplication()).getConfiguration();
 				config.setProperty("hotplug_profile", "0");
-				((DynatweakApp) getApplication()).saveConfiguration();
+				((Dynatweak) getApplication()).saveConfiguration();
 			}
 		});
 		spinnerHotplug.setSelection(Integer.parseInt(config.getProperty("hotplug_profile", "0")));
 
 		toggleService.setOnClickListener(view -> {
-			Properties configuration = ((DynatweakApp) getApplication()).getConfiguration();
+			Properties configuration = ((Dynatweak) getApplication()).getConfiguration();
 			Intent intent1 = new Intent(MainActivity.this, MonitorService.class);
 			if (toggleService.isChecked()) {
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -137,7 +137,7 @@ public class MainActivity extends Activity {
 				stopService(intent1);
 				configuration.setProperty("dynatweak_service", "disabled");
 			}
-			((DynatweakApp) getApplication()).saveConfiguration();
+			((Dynatweak) getApplication()).saveConfiguration();
 		});
 
 		buttonApply.setOnClickListener(view -> applySettings());
@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
 		buttonApply.setEnabled(false);
 		progressBar.setVisibility(View.VISIBLE);
 		progressBar.setIndeterminate(true);
-		final Properties config = ((DynatweakApp) getApplication()).getConfiguration();
+		final Properties config = ((Dynatweak) getApplication()).getConfiguration();
 		final int hotplug_profile = Integer.parseInt(config.getProperty("hotplug_profile", "0"));
 		final int profile = Integer.parseInt(config.getProperty("interactive_profile", "0"));
 		final Handler handler = new Handler();

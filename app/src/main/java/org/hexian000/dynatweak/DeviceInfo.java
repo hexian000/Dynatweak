@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
+import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
@@ -20,7 +20,6 @@ import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
 class DeviceInfo {
 
 	final CpuStat stat;
-	private final boolean tzBuild = false;
 	private final List<DeviceNode> nodes;
 
 	DeviceInfo(Kernel k) {
@@ -43,7 +42,7 @@ class DeviceInfo {
 		}
 		nodes.add(stat);
 		nodes.add(new Memory());
-		if (tzBuild) {
+		if (BuildConfig.FLAVOR.contentEquals("tz")) {
 			nodes.add(new Sensors());
 		}
 	}
@@ -75,7 +74,7 @@ class DeviceInfo {
 		final Pattern cpu_all = Pattern.compile(
 				"^cpu {2}(\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+)",
 				Pattern.UNIX_LINES | Pattern.MULTILINE);
-		byte[] buf = new byte[4096];
+		final byte[] buf = new byte[4096];
 		Pattern[] cpu_line;
 		long cpu_iowait[], cpu_idle[], cpu_total[];
 		private int count;
@@ -514,15 +513,11 @@ class DeviceInfo {
 	}
 
 	private class Memory implements DeviceNode {
-		final private Pattern MemTotal = Pattern.compile("^MemTotal:\\s*(\\d+) kB$",
-				Pattern.UNIX_LINES | Pattern.MULTILINE);
-		final private Pattern MemActive = Pattern.compile("^Active:\\s*(\\d+) kB$",
-				Pattern.UNIX_LINES | Pattern.MULTILINE);
-		final private Pattern MemInactive = Pattern.compile("^Inactive:\\s*(\\d+) kB$",
-				Pattern.UNIX_LINES | Pattern.MULTILINE);
-		final private Pattern MemAvailable = Pattern.compile("^MemAvailable:\\s*(\\d+) kB$",
-				Pattern.UNIX_LINES | Pattern.MULTILINE);
-		byte[] buf = new byte[2048];
+		final byte[] buf = new byte[2048];
+		final private Pattern MemTotal = Pattern.compile("^MemTotal:\\s*(\\d+) kB$");
+		final private Pattern MemActive = Pattern.compile("^Active:\\s*(\\d+) kB$");
+		final private Pattern MemInactive = Pattern.compile("^Inactive:\\s*(\\d+) kB$");
+		final private Pattern MemAvailable = Pattern.compile("^MemAvailable:\\s*(\\d+) kB$");
 		private RandomAccessFile info;
 
 		Memory() {

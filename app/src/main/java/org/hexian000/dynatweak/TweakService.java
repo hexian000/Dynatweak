@@ -15,10 +15,10 @@ import android.widget.Toast;
 
 import java.io.IOException;
 
-import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
+import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
 public class TweakService extends Service {
-	public final static String CHANNEL_APPLYING_SETTINGS = "applying_settings";
+	private final static String CHANNEL_APPLYING_SETTINGS = "applying_settings";
 	private PowerManager.WakeLock wakeLock;
 
 	private void finish(boolean success) {
@@ -77,8 +77,8 @@ public class TweakService extends Service {
 				"Dynatweak");
 		wakeLock.acquire(5 * 60 * 1000L /*5 minutes*/);
 
-		final int hotplug = intent.getIntExtra("hotplug", BootReceiver.HOTPLUG_ALLCORES);
-		final int profile = intent.getIntExtra("profile", BootReceiver.PROFILE_BALANCED);
+		final int hotplug = intent.getIntExtra("hotplug", Dynatweak.Hotplugs.DEFAULT);
+		final int profile = intent.getIntExtra("profile", Dynatweak.Profiles.DEFAULT);
 		final Handler handler = new Handler();
 		new Thread(() -> {
 			boolean success = false;

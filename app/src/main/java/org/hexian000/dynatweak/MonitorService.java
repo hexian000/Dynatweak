@@ -24,14 +24,14 @@ import android.widget.Toast;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static org.hexian000.dynatweak.DynatweakApp.LOG_TAG;
+import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
 /**
  * Created by hexian on 2017/6/18.
  * System monitor service
  */
 public class MonitorService extends Service {
-	public final static String CHANNEL_MONITOR = "monitor_overlay";
+	private final static String CHANNEL_MONITOR = "monitor_overlay";
 
 	static MonitorService instance = null;
 	private final Handler handler = new Handler();
