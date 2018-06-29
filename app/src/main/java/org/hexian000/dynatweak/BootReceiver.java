@@ -43,6 +43,8 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setSysctl("kernel.random.write_wakeup_threshold", "512");
 
 		// VM
+		k.setSysctl("vm.dirty_ratio", "25");
+		k.setSysctl("vm.dirty_background_ratio", "20");
 		k.setSysctl("vm.dirty_expire_centisecs", "3000");
 		k.setSysctl("vm.dirty_writeback_centisecs", "1000");
 
