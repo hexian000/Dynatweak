@@ -224,7 +224,8 @@ public class BootReceiver extends BroadcastReceiver {
 								setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
 								setAllCoresTheSame("60", clusterPolicy.getCpuCount()));
-						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
+						k.setNode(cpu.getPath() + "/core_ctl/min_cpus",
+								Math.min(clusterPolicy.getCpuCount(), 2) + "");
 						break;
 					case Dynatweak.Profiles.GAMING:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
@@ -243,7 +244,8 @@ public class BootReceiver extends BroadcastReceiver {
 								setAllCoresTheSame("10", clusterPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
 								setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
-						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", Math.min(clusterPolicy.getCpuCount(), 2) + "");
+						k.setNode(cpu.getPath() + "/core_ctl/min_cpus",
+								Math.min(clusterPolicy.getCpuCount(), 2) + "");
 						break;
 					case Dynatweak.Profiles.BALANCED:
 					case Dynatweak.Profiles.PERFORMANCE:
@@ -482,7 +484,8 @@ public class BootReceiver extends BroadcastReceiver {
 		return sb.toString();
 	}
 
-	private static void tweakGovernor(Kernel k, Kernel.CpuCore cpu, String policy, String governor, int profile) throws IOException {
+	private static void tweakGovernor(Kernel k, Kernel.CpuCore cpu, String policy, String governor, int profile)
+			throws IOException {
 		switch (profile) {
 		case Dynatweak.Profiles.POWERSAVE: // powersave
 			switch (governor) {

@@ -474,10 +474,11 @@ class Kernel {
 			if (scaling_available_frequencies == null) {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
-			for (Integer scaling_available_frequency : scaling_available_frequencies)
+			for (Integer scaling_available_frequency : scaling_available_frequencies) {
 				if (scaling_available_frequency >= frequency) {
 					return scaling_available_frequency;
 				}
+			}
 			return scaling_available_frequencies.get(scaling_available_frequencies.size() - 1);
 		}
 

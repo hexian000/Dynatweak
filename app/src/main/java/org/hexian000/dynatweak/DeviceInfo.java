@@ -381,10 +381,11 @@ class DeviceInfo {
 			if (gpu_freq != null) {
 				try {
 					long rawFreq = Integer.parseInt(k.readNode(gpu_freq));
-					for (int i = 0; i < 2; i++)
+					for (int i = 0; i < 2; i++) {
 						if (rawFreq > 1000) {
 							rawFreq /= 1000;
 						}
+					}
 					out.append(rawFreq);
 				} catch (Throwable e) {
 					gpu_freq = null;
