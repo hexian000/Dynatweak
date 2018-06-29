@@ -7,8 +7,8 @@ android {
         applicationId "org.hexian000.dynatweak"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 47
-        versionName "5.4.2"
+        versionCode 48
+        versionName "5.4.3"
     }
     flavorDimensions 'overlay'
     productFlavors {
