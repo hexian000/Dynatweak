@@ -101,8 +101,8 @@ class DeviceInfo {
 			}
 			try {
 				stat = new RandomAccessFile("/proc/stat", "r");
-			} catch (Throwable ignore) {
-				stat = null;
+			} catch (Throwable ex) {
+				Log.e(LOG_TAG, "cannot access /proc/stat", ex);
 			}
 		}
 
@@ -515,25 +515,22 @@ class DeviceInfo {
 
 	private class Memory implements DeviceNode {
 		final byte[] buf = new byte[2048];
-		final private Pattern MemTotal = Pattern.compile("^MemTotal:\\s*(\\d+) kB$");
-		final private Pattern MemActive = Pattern.compile("^Active:\\s*(\\d+) kB$");
-		final private Pattern MemInactive = Pattern.compile("^Inactive:\\s*(\\d+) kB$");
-		final private Pattern MemAvailable = Pattern.compile("^MemAvailable:\\s*(\\d+) kB$");
+		final private Pattern MemTotal = Pattern.compile("MemTotal:\\s*(\\d+) kB");
+		final private Pattern MemActive = Pattern.compile("Active:\\s*(\\d+) kB");
+		final private Pattern MemInactive = Pattern.compile("Inactive:\\s*(\\d+) kB");
+		final private Pattern MemAvailable = Pattern.compile("MemAvailable:\\s*(\\d+) kB");
 		private RandomAccessFile info;
 
 		Memory() {
 			try {
 				info = new RandomAccessFile("/proc/meminfo", "r");
-			} catch (FileNotFoundException e) {
-				Log.e(LOG_TAG, "MemoryInfo", e);
+			} catch (Throwable e) {
+				Log.e(LOG_TAG, "can not access /proc/meminfo", e);
 			}
 		}
 
 		@Override
 		public void generateHtml(StringBuilder out) throws IOException {
-			if (info == null) {
-				return;
-			}
 			try {
 				String data;
 				{
@@ -547,25 +544,25 @@ class DeviceInfo {
 				if (matcher.find()) {
 					memTotal = Long.parseLong(matcher.group(1));
 				} else {
-					return;
+					throw new Exception("MemTotal pattern mismatch");
 				}
 				matcher = MemAvailable.matcher(data);
 				if (matcher.find()) {
 					memAvail = Long.parseLong(matcher.group(1));
 				} else {
-					return;
+					throw new Exception("MemAvailable pattern mismatch");
 				}
 				matcher = MemActive.matcher(data);
 				if (matcher.find()) {
 					memActive = Long.parseLong(matcher.group(1));
 				} else {
-					return;
+					throw new Exception("Active pattern mismatch");
 				}
 				matcher = MemInactive.matcher(data);
 				if (matcher.find()) {
 					memInactive = Long.parseLong(matcher.group(1));
 				} else {
-					return;
+					throw new Exception("Inactive pattern mismatch");
 				}
 				out.append("mem: ").append(memAvail / 1024).
 						append('/').append(memTotal / 1024).
@@ -580,7 +577,7 @@ class DeviceInfo {
 
 		@Override
 		public boolean hasAny() {
-			return true;
+			return info != null;
 		}
 	}
 }
