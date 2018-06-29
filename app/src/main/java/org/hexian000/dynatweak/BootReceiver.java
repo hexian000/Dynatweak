@@ -169,12 +169,12 @@ public class BootReceiver extends BroadcastReceiver {
 			for (int trial = 0; trial < 3; trial++) {
 				try {
 					cpu.trySetOnline(true);
-					if (profile == Dynatweak.Profiles.GAMING) {
+					/*if (profile == Dynatweak.Profiles.GAMING) {
 						cpu.setScalingMinFrequency(cpu.getMaxFrequency());
 					} else {
 						cpu.setScalingMinFrequency(cpu.getMinFrequency());
 					}
-					cpu.setScalingMaxFrequency(cpu.getMaxFrequency());
+					cpu.setScalingMaxFrequency(cpu.getMaxFrequency());*/
 					// Per cpu governor tweak
 					if (profile != Dynatweak.Profiles.DISABLED) {
 						cpu.trySetGovernor(governor.get(cpu.getCluster()));
