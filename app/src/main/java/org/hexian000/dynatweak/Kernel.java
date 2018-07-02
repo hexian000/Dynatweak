@@ -4,9 +4,7 @@ import android.util.Log;
 import eu.chainfire.libsuperuser.Shell;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
@@ -19,9 +17,10 @@ class Kernel {
 	private final static boolean isSELinux = Shell.SU.isSELinuxEnforcing();
 	private static Kernel instance = null;
 	final List<CpuCore> cpuCores;
-	private final List<ClusterPolicy> clusterPolicies;
+	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
 	private int raw_id;
+	private int clusterCount;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	private Kernel() {
@@ -110,10 +109,11 @@ class Kernel {
 			break;
 		}
 
-		clusterPolicies = new ArrayList<>();
+		frequencyPolicies = new ArrayList<>();
 		final String cpuPath = "/sys/devices/system/cpu";
-		int cpuId = 0;
+		int cpuId = 0, cluster = -1;
 		cpuCores = new ArrayList<>();
+		Set<Integer> clusterMap = new HashSet<>();
 		while (new File(cpuPath + "/cpu" + cpuId).exists()) {
 			try {
 				CpuCore cpu;
@@ -149,17 +149,22 @@ class Kernel {
 							null);
 					break;
 				}
+				if (clusterMap.add(cpu.getMaxFrequency())) {
+					cluster++;
+				}
+				cpu.setCluster(cluster);
 				cpuCores.add(cpu);
 			} catch (Throwable ignore) {
 			}
 			cpuId++;
 		}
+		clusterCount = cluster;
 
-		int cluster = 0;
+		int policy = 0;
 		for (CpuCore cpu : cpuCores) {
 			boolean exist = false;
-			for (ClusterPolicy clusterPolicy : clusterPolicies) {
-				for (int affectedCpu : clusterPolicy.AffectedCpu) {
+			for (FrequencyPolicy frequencyPolicy : frequencyPolicies) {
+				for (int affectedCpu : frequencyPolicy.AffectedCpu) {
 					if (cpu.getId() == affectedCpu) {
 						exist = true;
 						break;
@@ -173,23 +178,23 @@ class Kernel {
 				continue;
 			}
 			try {
-				String policy = "/sys/devices/system/cpu/cpufreq/policy" + cpu.getId();
-				if (!hasNodeByRoot(policy)) {
-					policy = cpu.path + "/cpufreq";
+				String policyPath = "/sys/devices/system/cpu/cpufreq/policy" + cpu.getId();
+				if (!hasNodeByRoot(policyPath)) {
+					policyPath = cpu.path + "/cpufreq";
 				}
-				String affectedCpus = readNodeByRoot(policy + "/related_cpus");
-				Log.d(LOG_TAG, "policy: " + policy + " related_cpus: " + affectedCpus);
+				String affectedCpus = readNodeByRoot(policyPath + "/related_cpus");
+				Log.d(LOG_TAG, "policy: " + policyPath + " related_cpus: " + affectedCpus);
 				if (affectedCpus.length() > 0) {
 					String[] raw = affectedCpus.split("\\s+");
 					int[] affected_cpus = new int[raw.length];
 					int i = 0;
 					for (String raw_id : raw) {
 						int id = Integer.parseInt(raw_id);
-						cpuCores.get(id).setCluster(cluster);
+						cpuCores.get(id).setPolicy(policy);
 						affected_cpus[i++] = id;
 					}
-					clusterPolicies.add(new ClusterPolicy(cpu.getId(), affected_cpus, policy));
-					cluster++;
+					frequencyPolicies.add(new FrequencyPolicy(cpu.getId(), affected_cpus, policyPath));
+					policy++;
 				}
 			} catch (Throwable ex) {
 				Log.w(LOG_TAG, "read cpu policy failed", ex);
@@ -202,6 +207,10 @@ class Kernel {
 			instance = new Kernel();
 		}
 		return instance;
+	}
+
+	public int getClusterCount() {
+		return clusterCount;
 	}
 
 	boolean hasNode(String path) {
@@ -294,8 +303,8 @@ class Kernel {
 		}
 	}
 
-	List<ClusterPolicy> getAllPolicies() {
-		return clusterPolicies;
+	List<FrequencyPolicy> getAllPolicies() {
+		return frequencyPolicies;
 	}
 
 	boolean hasCoreControl() {
@@ -394,12 +403,12 @@ class Kernel {
 		return raw_id;
 	}
 
-	class ClusterPolicy {
+	class FrequencyPolicy {
 		private final int StartCpu;
 		private final int[] AffectedCpu;
 		private final String PolicyPath;
 
-		ClusterPolicy(int startCpu, int[] cpu, String path) {
+		FrequencyPolicy(int startCpu, int[] cpu, String path) {
 			StartCpu = startCpu;
 			AffectedCpu = cpu;
 			PolicyPath = path;
@@ -424,6 +433,7 @@ class Kernel {
 		AdaptiveTempReader tempNode = null;
 		private List<Integer> scaling_available_frequencies = null;
 		private int cluster;
+		private int policy;
 
 		CpuCore(int id, String tempNode) {
 			if (tempNode != null) {
@@ -435,6 +445,14 @@ class Kernel {
 			}
 			this.path = "/sys/devices/system/cpu/cpu" + id;
 			this.id = id;
+		}
+
+		public int getPolicy() {
+			return policy;
+		}
+
+		public void setPolicy(int policy) {
+			this.policy = policy;
 		}
 
 		int getId() {

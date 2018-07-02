@@ -72,7 +72,7 @@ public class BootReceiver extends BroadcastReceiver {
 			}
 		}
 
-		List<Kernel.ClusterPolicy> allPolicy = k.getAllPolicies();
+		List<Kernel.FrequencyPolicy> allPolicy = k.getAllPolicies();
 		List<String> allGovernors = cpu0.getScalingAvailableGovernors();
 		List<String> governor = new ArrayList<>();
 		List<Integer> profiles = new ArrayList<>();
@@ -181,47 +181,47 @@ public class BootReceiver extends BroadcastReceiver {
 
 		// Per cluster governor tweak
 		for (int i = 0; i < allPolicy.size(); i++) {
-			Kernel.ClusterPolicy clusterPolicy = allPolicy.get(i);
+			Kernel.FrequencyPolicy frequencyPolicy = allPolicy.get(i);
 			if (profile != Dynatweak.Profiles.DISABLED) {
 				Log.d(LOG_TAG, "tweaking cluster " + i +
 						": governor=" + governor.get(i) + ", profile=" + profiles.get(i));
 			}
-			Kernel.CpuCore cpu = k.cpuCores.get(clusterPolicy.getStartCpu());
+			Kernel.CpuCore cpu = k.cpuCores.get(frequencyPolicy.getStartCpu());
 			// Qualcomm core control
 			if (k.hasNode(cpu.getPath() + "/core_ctl")) {
 				Log.i(LOG_TAG, "policy" + i + ": core_ctl detected");
-				k.setNode(cpu.getPath() + "/core_ctl/max_cpus", clusterPolicy.getCpuCount() + "");
+				k.setNode(cpu.getPath() + "/core_ctl/max_cpus", frequencyPolicy.getCpuCount() + "");
 				k.setNode(cpu.getPath() + "/core_ctl/offline_delay_ms", "100");
 				if (!k.readNode(cpu.getPath() + "/core_ctl/is_big_cluster").equals("0")) {
 					switch (profile) { // big cluster
 					case Dynatweak.Profiles.POWERSAVE:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
-								setAllCoresTheSame("40", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("40", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
-								setAllCoresTheSame("90", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("90", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 						break;
 					case Dynatweak.Profiles.BALANCED:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
-								setAllCoresTheSame("40", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("40", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
-								setAllCoresTheSame("60", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("60", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", "0");
 						break;
 					case Dynatweak.Profiles.PERFORMANCE:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
-								setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("30", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
-								setAllCoresTheSame("60", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("60", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/min_cpus",
-								Math.min(clusterPolicy.getCpuCount(), 2) + "");
+								Math.min(frequencyPolicy.getCpuCount(), 2) + "");
 						break;
 					case Dynatweak.Profiles.GAMING:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
-								setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("0", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
-								setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
-						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
+								setAllCoresTheSame("0", frequencyPolicy.getCpuCount()));
+						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", frequencyPolicy.getCpuCount() + "");
 						break;
 					}
 				} else { // little cluster
@@ -230,27 +230,27 @@ public class BootReceiver extends BroadcastReceiver {
 						break;
 					case Dynatweak.Profiles.POWERSAVE:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
-								setAllCoresTheSame("10", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("10", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
-								setAllCoresTheSame("30", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("30", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/min_cpus",
-								Math.min(clusterPolicy.getCpuCount(), 2) + "");
+								Math.min(frequencyPolicy.getCpuCount(), 2) + "");
 						break;
 					case Dynatweak.Profiles.BALANCED:
 					case Dynatweak.Profiles.PERFORMANCE:
 					case Dynatweak.Profiles.GAMING:
 						k.setNode(cpu.getPath() + "/core_ctl/busy_down_thres",
-								setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
+								setAllCoresTheSame("0", frequencyPolicy.getCpuCount()));
 						k.setNode(cpu.getPath() + "/core_ctl/busy_up_thres",
-								setAllCoresTheSame("0", clusterPolicy.getCpuCount()));
-						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", clusterPolicy.getCpuCount() + "");
+								setAllCoresTheSame("0", frequencyPolicy.getCpuCount()));
+						k.setNode(cpu.getPath() + "/core_ctl/min_cpus", frequencyPolicy.getCpuCount() + "");
 						break;
 					}
 				}
 			}
 			// Per policy
 			if (profile != Dynatweak.Profiles.DISABLED) {
-				String policy = clusterPolicy.getPolicyPath();
+				String policy = frequencyPolicy.getPolicyPath();
 				if (policy != null) {
 					tweakGovernor(k, cpu, policy, governor.get(i), profiles.get(i));
 				}
@@ -407,7 +407,7 @@ public class BootReceiver extends BroadcastReceiver {
 			int mask = 0;
 			for (Kernel.CpuCore cpu : k.cpuCores) {
 				boolean set;
-				if (multiPolicy ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size()) {
+				if (k.getClusterCount() > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size()) {
 					set = true;
 				} else {
 					mask |= 1 << cpu.getId();
