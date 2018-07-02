@@ -403,12 +403,12 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Hotplugs.ALLCORES: // all cores
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 			break;
-		case Dynatweak.Hotplugs.LITTLECORES: // little cluster or dual-core
+		case Dynatweak.Hotplugs.LITTLECORES: // little cluster or half core
 			if (multiPolicy) {
 				int mask = 0, count = 0;
 				for (Kernel.CpuCore cpu : k.cpuCores) {
 					boolean set;
-					if (cpu.getCluster() == 0 || count < 2) {
+					if (cpu.getCluster() == 0 || count < k.cpuCores.size()) {
 						set = true;
 						count++;
 					} else {

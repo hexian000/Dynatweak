@@ -13,7 +13,7 @@
     </string-array>
     <string-array name="hotplug_profile">
         <item>全核心在线</item>
-        <item>小核模式/双核模式</item>
+        <item>半数核心（对称处理器）/小核（非对称处理器）</item>
         <item>使用热插拔驱动（需要内核支持）</item>
     </string-array>
     <string name="app_additional_functions">- 附加功能 -</string>
