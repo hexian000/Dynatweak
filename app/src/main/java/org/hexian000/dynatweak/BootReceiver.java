@@ -183,7 +183,7 @@ public class BootReceiver extends BroadcastReceiver {
 		for (int i = 0; i < allPolicy.size(); i++) {
 			Kernel.FrequencyPolicy frequencyPolicy = allPolicy.get(i);
 			if (profile != Dynatweak.Profiles.DISABLED) {
-				Log.d(LOG_TAG, "tweaking cluster " + i +
+				Log.d(LOG_TAG, "tweaking policy " + i +
 						": governor=" + governor.get(i) + ", profile=" + profiles.get(i));
 			}
 			Kernel.CpuCore cpu = k.cpuCores.get(frequencyPolicy.getStartCpu());
@@ -404,10 +404,12 @@ public class BootReceiver extends BroadcastReceiver {
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 			break;
 		case Dynatweak.Hotplugs.LITTLECORES: // little cluster or half core
+			final int cluster = k.getClusterCount();
+			Log.d(LOG_TAG, "cluster count: " + cluster);
 			int mask = 0;
 			for (Kernel.CpuCore cpu : k.cpuCores) {
 				boolean set;
-				if (k.getClusterCount() > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size()) {
+				if (cluster > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size()) {
 					set = true;
 				} else {
 					mask |= 1 << cpu.getId();

@@ -158,7 +158,7 @@ class Kernel {
 			}
 			cpuId++;
 		}
-		clusterCount = cluster;
+		clusterCount = cluster + 1;
 
 		int policy = 0;
 		for (CpuCore cpu : cpuCores) {
