@@ -404,33 +404,19 @@ public class BootReceiver extends BroadcastReceiver {
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 			break;
 		case Dynatweak.Hotplugs.LITTLECORES: // little cluster or half core
-			if (multiPolicy) {
-				int mask = 0, count = 0;
-				for (Kernel.CpuCore cpu : k.cpuCores) {
-					boolean set;
-					if (cpu.getCluster() == 0 || count < k.cpuCores.size()) {
-						set = true;
-						count++;
-					} else {
-						mask |= 1 << cpu.getId();
-						set = false;
-					}
-					cpu.setOnline(set, true);
+			int mask = 0;
+			for (Kernel.CpuCore cpu : k.cpuCores) {
+				boolean set;
+				if (multiPolicy ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size()) {
+					set = true;
+				} else {
+					mask |= 1 << cpu.getId();
+					set = false;
 				}
-				if (k.hasCoreControl()) {
-					k.setCoreControlMask(mask);
-				}
-			} else {
-				for (Kernel.CpuCore cpu : k.cpuCores) {
-					cpu.setOnline(cpu.getId() < 2, true);
-				}
-				if (k.hasCoreControl()) {
-					int cpuCount = k.cpuCores.size();
-					if (cpuCount < 31) {
-						int allMask = (1 << cpuCount) - 1;
-						k.setCoreControlMask(allMask ^ 3);
-					}
-				}
+				cpu.setOnline(set, true);
+			}
+			if (k.hasCoreControl()) {
+				k.setCoreControlMask(mask);
 			}
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
 			break;
