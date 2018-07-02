@@ -409,7 +409,7 @@ public class BootReceiver extends BroadcastReceiver {
 			int mask = 0;
 			for (Kernel.CpuCore cpu : k.cpuCores) {
 				boolean set;
-				if (cluster > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size()) {
+				if (cluster > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size() / 2) {
 					set = true;
 				} else {
 					mask |= 1 << cpu.getId();
