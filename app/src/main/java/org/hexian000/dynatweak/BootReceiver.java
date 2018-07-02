@@ -54,23 +54,13 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
 
 		// IO
-		k.setNode("/sys/module/sync/parameters/fsync_enabled", "N");
 		List<String> block = k.listBlockDevices();
 		for (String i : block) {
 			Log.i(LOG_TAG, "block device detected: " + i);
 			if (k.hasNode(i + "/queue/scheduler")) {
-				k.setNode(i + "/queue/iostats", "0");
-				k.setNode(i + "/queue/add_random", "0");
 				k.setNode(i + "/queue/read_ahead_kb", "1024");
-				k.setNode(i + "/queue/rq_affinity", "1");
-				k.setNode(i + "/queue/rotational", "0");
-				k.setNode(i + "/queue/nr_requests", "512");
 				List<String> schedulers = k.listBlockAvailableScheduler(i + "/queue/scheduler");
-				if (schedulers.contains("maple")) {
-					k.setNode(i + "/queue/scheduler", "maple");
-				} else if (schedulers.contains("fiops")) {
-					k.setNode(i + "/queue/scheduler", "fiops");
-				} else if (schedulers.contains("bfq")) {
+				if (schedulers.contains("bfq")) {
 					k.setNode(i + "/queue/scheduler", "bfq");
 					k.setNode(i + "/queue/iosched/low_latency", "1");
 					k.setNode(i + "/queue/iosched/slice_idle", "0");
