@@ -312,9 +312,9 @@ class Kernel {
 	}
 
 	void setCoreControlMask(int mask) {
-		setNode("/sys/module/msm_thermal/parameters/enabled", "Y", true);
-		setNode("/sys/module/msm_thermal/core_control/enabled", "1", true);
-		setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "", true);
+		setNode("/sys/module/msm_thermal/parameters/enabled", "Y");
+		setNode("/sys/module/msm_thermal/core_control/enabled", "1");
+		setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "");
 	}
 
 	String readNode(String path) throws IOException {
@@ -353,19 +353,8 @@ class Kernel {
 	}
 
 	void setNode(String path, String value) {
-		setNode(path, value, false);
-	}
-
-	void setNode(String path, String value, boolean lock) {
-		if (lock) {
-			commands.add("[ -f '" + path + "' ] && " +
-					"chmod +w '" + path + "' && " +
-					"( echo '" + value + "'>'" + path + "' ; " +
-					"chmod -w '" + path + "' )");
-		} else {
-			commands.add("[ -f '" + path + "' ] && " +
-					"echo '" + value + "'>'" + path + "'");
-		}
+		commands.add("[ -f '" + path + "' ] && " +
+				"echo '" + value + "'>'" + path + "'");
 	}
 
 	boolean trySetNode(String node, String value) {
@@ -451,7 +440,7 @@ class Kernel {
 			return policy;
 		}
 
-		public void setPolicy(int policy) {
+		void setPolicy(int policy) {
 			this.policy = policy;
 		}
 
@@ -546,10 +535,10 @@ class Kernel {
 			return ret;
 		}
 
-		void setOnline(boolean online, boolean locked) {
+		void setOnline(boolean online) {
 			if (online) {
 				for (int putOnline = 0; putOnline < 10; putOnline++) {
-					setNode(path + "/online", "1", locked);
+					setNode(path + "/online", "1");
 					if (!isOnline()) {
 						try {
 							Thread.sleep(5);
@@ -560,7 +549,7 @@ class Kernel {
 					}
 				}
 			} else {
-				setNode(path + "/online", "0", locked);
+				setNode(path + "/online", "0");
 			}
 		}
 

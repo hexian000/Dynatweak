@@ -415,7 +415,7 @@ public class BootReceiver extends BroadcastReceiver {
 					mask |= 1 << cpu.getId();
 					set = false;
 				}
-				cpu.setOnline(set, true);
+				cpu.setOnline(set);
 			}
 			if (k.hasCoreControl()) {
 				k.setCoreControlMask(mask);
