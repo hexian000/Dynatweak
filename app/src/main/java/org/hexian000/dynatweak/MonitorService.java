@@ -225,7 +225,6 @@ public class MonitorService extends Service {
 				@Override
 				public synchronized void run() {
 					if (visible) {
-						deviceInfo.stat.sample();
 						updateOverlay();
 					}
 				}

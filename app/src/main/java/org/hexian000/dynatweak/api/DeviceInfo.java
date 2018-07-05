@@ -4,7 +4,6 @@ import android.os.Build;
 import android.util.Log;
 import org.hexian000.dynatweak.BuildConfig;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ interface DeviceNode {
  */
 public class DeviceInfo {
 
-	public final CpuStat stat;
+	private final CpuStat stat;
 	private final List<DeviceNode> nodes;
 
 	public DeviceInfo(Kernel k) {
@@ -66,9 +65,8 @@ public class DeviceInfo {
 			}
 		}
 		for (String path : devices) {
-			final String stat = path + "/stat";
-			if (k.hasNode(stat)) {
-				nodes.add(new Block(stat));
+			if (k.hasNode(path + "/stat")) {
+				nodes.add(new Block(path.substring(path.lastIndexOf('/') + 1)));
 			}
 		}
 
@@ -78,6 +76,7 @@ public class DeviceInfo {
 	}
 
 	public String getHtml() {
+		stat.sample();
 		StringBuilder sb = new StringBuilder();
 		for (DeviceNode dev : nodes) {
 			try {
@@ -154,7 +153,7 @@ class CpuStat implements DeviceNode {
 		}
 	}
 
-	public void sample() {
+	void sample() {
 		if (stat == null) {
 			return;
 		}
@@ -455,7 +454,7 @@ class Sensors implements DeviceNode {
 		while (k.hasNode(path = k.getThermalZone(i))) {
 			try {
 				sensors.add(new MaxTempReader(path));
-			} catch (FileNotFoundException ignore) {
+			} catch (IOException ignored) {
 			}
 			i++;
 		}
@@ -639,15 +638,9 @@ class Memory implements DeviceNode {
 class Block implements DeviceNode {
 	private static final Pattern statPattern = Pattern.compile(
 			"(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");
+	private String block;
 	private NodeMonitor node;
-
-	Block(String node) {
-		try {
-			this.node = new NodeMonitor(node);
-		} catch (IOException e) {
-			Log.w(LOG_TAG, "block monitor for " + node, e);
-		}
-	}
+	private long[] last_value, value;
 
 	/*
 	 * Name            units         description
@@ -665,13 +658,45 @@ class Block implements DeviceNode {
 	 * time_in_queue   milliseconds  total wait time for all requests
 	 */
 
+	Block(String block) {
+		this.block = block;
+		last_value = new long[11];
+		value = new long[11];
+		try {
+			node = new NodeMonitor("/sys/block/" + block + "/stats");
+			sample();
+			swap();
+		} catch (IOException e) {
+			Log.w(LOG_TAG, "block monitor for " + block, e);
+			node = null;
+		}
+	}
+
 	@Override
 	public void generateHtml(StringBuilder out) throws IOException {
+		sample();
+		out.append(block).append(" R:").append(value[0] - last_value[0])
+		   .append("iops W:").append(value[4] - last_value[4])
+		   .append("iops A:").append(value[9] - last_value[9])
+		   .append("ms L:").append(value[10] - last_value[10]).append("ms");
+		swap();
+	}
+
+	private void sample() throws IOException {
 		Matcher m = statPattern.matcher(node.read());
 		if (!m.find()) {
 			node = null;
-			throw new IOException();
+			throw new IOException("block stat pattern mismatch");
 		}
+		for (int i = 0; i < 11; i++) {
+			value[i] = Long.parseLong(m.group(i + 1));
+		}
+	}
+
+	private void swap() {
+		long[] t = value;
+		value = last_value;
+		last_value = t;
 	}
 
 	@Override
