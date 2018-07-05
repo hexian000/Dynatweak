@@ -120,7 +120,6 @@ public class Kernel {
 		cpuCores = new ArrayList<>();
 		Set<Integer> clusterMap = new HashSet<>();
 		while (hasNodeByRoot(cpuPath + "/cpu" + cpuId)) {
-			Log.d(LOG_TAG, "found cpu" + cpuId);
 			CpuCore cpu;
 			switch (raw_id) {
 			case 1972:
@@ -375,11 +374,7 @@ public class Kernel {
 		}
 		List<String> result = SU.run("cat '" + path + "'");
 		if (result != null && result.size() > 0) {
-			StringBuilder sb = new StringBuilder();
-			for (String line : result) {
-				sb.append(line).append('\n');
-			}
-			return sb.toString();
+			return result.get(0);
 		} else {
 			Log.w(LOG_TAG, "readNodeByRoot got nothing - \"" + path + "\"");
 			return "";
