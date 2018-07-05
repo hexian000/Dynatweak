@@ -519,6 +519,7 @@ class DeviceInfo {
 		final private Pattern MemActive = Pattern.compile("Active:\\s*(\\d+) kB");
 		final private Pattern MemInactive = Pattern.compile("Inactive:\\s*(\\d+) kB");
 		final private Pattern MemAvailable = Pattern.compile("MemAvailable:\\s*(\\d+) kB");
+		final private Pattern MemFree = Pattern.compile("MemFree:\\s*(\\d+) kB");
 		private RandomAccessFile info;
 
 		Memory() {
@@ -550,7 +551,12 @@ class DeviceInfo {
 				if (matcher.find()) {
 					memAvail = Long.parseLong(matcher.group(1));
 				} else {
-					throw new Exception("MemAvailable pattern mismatch");
+					matcher = MemFree.matcher(data);
+					if (matcher.find()) {
+						memAvail = Long.parseLong(matcher.group(1));
+					} else {
+						throw new Exception("MemAvailable & MemFree pattern mismatch");
+					}
 				}
 				matcher = MemActive.matcher(data);
 				if (matcher.find()) {
