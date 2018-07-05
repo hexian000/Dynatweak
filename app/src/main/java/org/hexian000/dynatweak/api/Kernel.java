@@ -119,47 +119,48 @@ public class Kernel {
 		cpuCores = new ArrayList<>();
 		Set<Integer> clusterMap = new HashSet<>();
 		while (hasNodeByRoot(cpuPath + "/cpu" + cpuId)) {
+			Log.d(LOG_TAG, "found cpu" + cpuId);
+			CpuCore cpu;
+			switch (raw_id) {
+			case 1972:
+			case 1973:
+			case 1974:  // Xiaomi Mi 3/4/Note
+				cpu = new CpuCore(cpuId,
+						getThermalZone(cpuId + 5));
+				break;
+			case 70:  // Xiaomi Mi 5X
+				cpu = new CpuCore(cpuId,
+						getThermalZone(cpuId + 10));
+				break;
+			case 94:  // ONEPLUS A5000
+				cpu = new CpuCore(cpuId,
+						getThermalZone(cpuId + 11));
+				break;
+			case 95:  // ONEPLUS A3010
+				cpu = new CpuCore(cpuId,
+						getThermalZone(cpuId + 5));
+				break;
+			case 2375:  // Xiaomi Mi 5
+				cpu = new CpuCore(cpuId,
+						getThermalZone(cpuId + 9));
+				break;
+			case 1812:  // Xiaomi Mi 2/2S
+				cpu = new CpuCore(cpuId,
+						getThermalZone(cpuId + 7));
+				break;
+			default:
+				cpu = new CpuCore(cpuId,
+						null);
+				break;
+			}
 			try {
-				CpuCore cpu;
-				switch (raw_id) {
-				case 1972:
-				case 1973:
-				case 1974:  // Xiaomi Mi 3/4/Note
-					cpu = new CpuCore(cpuId,
-							getThermalZone(cpuId + 5));
-					break;
-				case 70:  // Xiaomi Mi 5X
-					cpu = new CpuCore(cpuId,
-							getThermalZone(cpuId + 10));
-					break;
-				case 94:  // ONEPLUS A5000
-					cpu = new CpuCore(cpuId,
-							getThermalZone(cpuId + 11));
-					break;
-				case 95:  // ONEPLUS A3010
-					cpu = new CpuCore(cpuId,
-							getThermalZone(cpuId + 5));
-					break;
-				case 2375:  // Xiaomi Mi 5
-					cpu = new CpuCore(cpuId,
-							getThermalZone(cpuId + 9));
-					break;
-				case 1812:  // Xiaomi Mi 2/2S
-					cpu = new CpuCore(cpuId,
-							getThermalZone(cpuId + 7));
-					break;
-				default:
-					cpu = new CpuCore(cpuId,
-							null);
-					break;
-				}
 				if (clusterMap.add(cpu.getMaxFrequency())) {
 					cluster++;
 				}
-				cpu.setCluster(cluster);
-				cpuCores.add(cpu);
-			} catch (Throwable ignore) {
+			} catch (Throwable ignored) {
 			}
+			cpu.setCluster(cluster);
+			cpuCores.add(cpu);
 			cpuId++;
 		}
 		clusterCount = cluster + 1;
@@ -463,7 +464,6 @@ public class Kernel {
 
 		CpuCore(int id, String tempNode) {
 			if (tempNode != null) {
-				// grantRead(tempNode);
 				try {
 					this.tempNode = new AdaptiveTempReader(tempNode);
 				} catch (Throwable ignore) {
