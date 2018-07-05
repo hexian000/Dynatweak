@@ -641,6 +641,7 @@ class Block implements DeviceNode {
 	private String block;
 	private NodeMonitor node;
 	private long[] last_value, value;
+	private long last_sample, sample;
 
 	/*
 	 * Name            units         description
@@ -663,7 +664,7 @@ class Block implements DeviceNode {
 		last_value = new long[11];
 		value = new long[11];
 		try {
-			node = new NodeMonitor("/sys/block/" + block + "/stats");
+			node = new NodeMonitor("/sys/block/" + block + "/stat");
 			sample();
 			swap();
 		} catch (IOException e) {
@@ -676,9 +677,10 @@ class Block implements DeviceNode {
 	public void generateHtml(StringBuilder out) throws IOException {
 		sample();
 		out.append(block).append(" R:").append(value[0] - last_value[0])
-		   .append("iops W:").append(value[4] - last_value[4])
-		   .append("iops A:").append(value[9] - last_value[9])
-		   .append("ms L:").append(value[10] - last_value[10]).append("ms");
+		   .append("iops ").append(value[3] - last_value[3]).append("ms")
+		   .append(" W:").append(value[4] - last_value[4])
+		   .append("iops ").append((value[9] - last_value[9]) * 100 / (sample - last_sample))
+		   .append('%');
 		swap();
 	}
 
@@ -688,6 +690,7 @@ class Block implements DeviceNode {
 			node = null;
 			throw new IOException("block stat pattern mismatch");
 		}
+		sample = System.currentTimeMillis();
 		for (int i = 0; i < 11; i++) {
 			value[i] = Long.parseLong(m.group(i + 1));
 		}
@@ -697,6 +700,9 @@ class Block implements DeviceNode {
 		long[] t = value;
 		value = last_value;
 		last_value = t;
+		long s = sample;
+		sample = last_sample;
+		last_sample = s;
 	}
 
 	@Override
