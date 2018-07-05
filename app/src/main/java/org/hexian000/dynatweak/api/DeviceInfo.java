@@ -35,7 +35,9 @@ public class DeviceInfo {
 			Kernel.CpuCore cpuCore = k.getCpuCore(i);
 			cpu = new CPU(cpuCore.getId(), stat);
 			nodes.add(cpu);
-			Log.d(LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
+			Log.i(LOG_TAG, "cpu" + cpuCore.getId() +
+					" in cluster " + cpuCore.getCluster() +
+					" policy " + cpuCore.getPolicy() + " detected");
 		}
 		stat.initialize(k.getCpuCoreCount());
 		DeviceNode gpu = new GPU();
