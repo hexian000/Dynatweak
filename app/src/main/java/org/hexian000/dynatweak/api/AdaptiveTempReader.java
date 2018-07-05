@@ -2,30 +2,27 @@ package org.hexian000.dynatweak.api;
 
 import android.util.Log;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
 public class AdaptiveTempReader {
 	private double divider;
-	private RandomAccessFile fr;
+	private NodeMonitor node;
 
-	AdaptiveTempReader(String node) throws FileNotFoundException {
+	AdaptiveTempReader(String node) throws IOException {
+		divider = 1.0;
 		try {
-			fr = new RandomAccessFile(node, "r");
-			divider = 1.0;
-			read();
-		} catch (Throwable e) {
+			this.node = new NodeMonitor(node);
+			read(); // fail early
+		} catch (IOException e) {
 			Log.w(LOG_TAG, "AdaptiveTempReader node=" + node, e);
-			throw new FileNotFoundException();
+			throw e;
 		}
 	}
 
 	double read() throws IOException {
-		fr.seek(0);
-		int raw = Integer.parseInt(fr.readLine());
+		int raw = Integer.parseInt(node.read());
 		double value = raw / divider;
 		while (Math.abs(value) >= 130.0) {
 			divider *= 10.0;
