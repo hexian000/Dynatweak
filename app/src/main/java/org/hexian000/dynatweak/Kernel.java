@@ -17,6 +17,7 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 class Kernel {
 	private final static boolean hasRoot = Shell.SU.available();
 	private static Kernel instance = null;
+	private static Pattern blockWithPartition = Pattern.compile("^(/dev/block/\\w+)p\\d+$");
 	final List<CpuCore> cpuCores;
 	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
@@ -210,6 +211,14 @@ class Kernel {
 		return instance;
 	}
 
+	private static String removeBlockPartition(String path) {
+		Matcher m = blockWithPartition.matcher(path);
+		if (m.find()) {
+			return m.group(1);
+		}
+		return path;
+	}
+
 	public String getBlockDevice(String mountPoint) {
 		if (mountPoints == null) {
 			Pattern mountPattern = Pattern.compile("^(\\S+) on (\\S+)");
@@ -218,7 +227,7 @@ class Kernel {
 			for (String mount : mounts) {
 				Matcher m = mountPattern.matcher(mount);
 				if (m.find()) {
-					mountMap.put(m.group(2), m.group(1));
+					mountMap.put(m.group(2), removeBlockPartition(m.group(1)));
 				}
 			}
 			mountPoints = Collections.unmodifiableMap(mountMap);

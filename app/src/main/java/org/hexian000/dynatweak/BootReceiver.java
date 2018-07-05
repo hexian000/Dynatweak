@@ -8,9 +8,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
@@ -54,8 +52,7 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
 
 		// IO
-		tweakBlockDevice(k, "/cache");
-		tweakBlockDevice(k, "/data");
+		tweakBlockDevices(k, new String[]{"/cache", "/data"});
 
 		List<Kernel.FrequencyPolicy> allPolicy = k.getAllPolicies();
 		List<String> allGovernors = cpu0.getScalingAvailableGovernors();
@@ -591,10 +588,17 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 	}
 
-	private static void tweakBlockDevice(final Kernel k, final String mountPoint) {
-		String path = k.getBlockDevice(mountPoint);
-		if (path != null && path.startsWith("/dev/block/")) {
-			path = "/sys" + path.substring(4);
+	private static void tweakBlockDevices(final Kernel k, final String[] mountPoint) {
+		Set<String> devices = new HashSet<>();
+		for (String mount : mountPoint) {
+			String path = k.getBlockDevice(mount);
+			if (path != null) {
+				devices.add("/sys" + path.substring(4));
+			} else {
+				Log.w(LOG_TAG, "mount point not found: " + mount);
+			}
+		}
+		for (String path : devices) {
 			if (k.hasNode(path + "/queue/scheduler")) {
 				Log.i(LOG_TAG, "block device detected: " + path);
 				k.setNode(path + "/queue/read_ahead_kb", "1024");
@@ -608,6 +612,8 @@ public class BootReceiver extends BroadcastReceiver {
 					k.setNode(path + "/queue/iosched/low_latency", "1");
 					k.setNode(path + "/queue/iosched/slice_idle", "0");
 				}
+			} else {
+				Log.w(LOG_TAG, "block node not found: " + path + "/queue/scheduler");
 			}
 		}
 	}
