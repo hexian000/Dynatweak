@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
+import org.hexian000.dynatweak.api.Kernel;
 
 import java.io.IOException;
 import java.util.*;
@@ -21,7 +22,7 @@ public class BootReceiver extends BroadcastReceiver {
 	static synchronized void tweak(int hotplug, int profile) throws IOException {
 		Log.i(LOG_TAG, "Start tweaking...");
 		Kernel k = Kernel.getInstance();
-		Kernel.CpuCore cpu0 = k.cpuCores.get(0);
+		Kernel.CpuCore cpu0 = k.getCpuCore(0);
 
 		// CPU Hotplug
 		if (k.hasNode("/system/bin/mpdecision")) {
@@ -137,7 +138,8 @@ public class BootReceiver extends BroadcastReceiver {
 		}
 
 		// CPU Frequency
-		for (Kernel.CpuCore cpu : k.cpuCores) {
+		for (int i = 0; i < k.getCpuCoreCount(); i++) {
+			Kernel.CpuCore cpu = k.getCpuCore(i);
 			for (int trial = 0; trial < 3; trial++) {
 				try {
 					cpu.trySetOnline(true);
@@ -168,7 +170,7 @@ public class BootReceiver extends BroadcastReceiver {
 				Log.d(LOG_TAG, "tweaking policy " + i +
 						": governor=" + governor.get(i) + ", profile=" + profiles.get(i));
 			}
-			Kernel.CpuCore cpu = k.cpuCores.get(frequencyPolicy.getStartCpu());
+			Kernel.CpuCore cpu = k.getCpuCore(frequencyPolicy.getStartCpu());
 			// Qualcomm core control
 			if (k.hasNode(cpu.getPath() + "/core_ctl")) {
 				Log.i(LOG_TAG, "policy" + i + ": core_ctl detected");
@@ -275,7 +277,8 @@ public class BootReceiver extends BroadcastReceiver {
 			final String msm_performance = "/sys/module/msm_performance/parameters/";
 			StringBuilder cpu_max_freq = new StringBuilder();
 			StringBuilder cpu_min_freq = new StringBuilder();
-			for (Kernel.CpuCore cpu : k.cpuCores) {
+			for (int i = 0; i < k.getCpuCoreCount(); i++) {
+				Kernel.CpuCore cpu = k.getCpuCore(i);
 				cpu_max_freq.append(cpu.getId()).append(':').append(cpu.getMaxFrequency()).append(' ');
 				cpu_min_freq.append(cpu.getId()).append(':').append(cpu.getMinFrequency()).append(' ');
 			}
@@ -298,7 +301,8 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/cpu_boost/parameters/boost_ms", "40");
 		k.setNode("/sys/module/cpu_boost/parameters/sync_threshold", cpu0.fitPercentage(0.3) + "");
 		StringBuilder boostFreq = new StringBuilder(), boostFreq_s2 = new StringBuilder();
-		for (Kernel.CpuCore cpu : k.cpuCores) {
+		for (int i = 0; i < k.getCpuCoreCount(); i++) {
+			Kernel.CpuCore cpu = k.getCpuCore(i);
 			if (multiPolicy) {
 				if (cpu.getCluster() == 0 && cpu.getId() < 2) {
 					boostFreq.append(cpu.getId()).append(':').append(cpu.fitPercentage(0.5)).append(' ');
@@ -389,9 +393,10 @@ public class BootReceiver extends BroadcastReceiver {
 			final int cluster = k.getClusterCount();
 			Log.d(LOG_TAG, "cluster count: " + cluster);
 			int mask = 0;
-			for (Kernel.CpuCore cpu : k.cpuCores) {
+			for (int i = 0; i < k.getCpuCoreCount(); i++) {
+				Kernel.CpuCore cpu = k.getCpuCore(i);
 				boolean set;
-				if (cluster > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.cpuCores.size() / 2) {
+				if (cluster > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.getCpuCoreCount() / 2) {
 					set = true;
 				} else {
 					mask |= 1 << cpu.getId();

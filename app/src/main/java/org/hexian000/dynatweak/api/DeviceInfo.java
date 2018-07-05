@@ -1,7 +1,8 @@
-package org.hexian000.dynatweak;
+package org.hexian000.dynatweak.api;
 
 import android.os.Build;
 import android.util.Log;
+import org.hexian000.dynatweak.BuildConfig;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -17,12 +18,12 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
  * Created by hexian on 2017/6/18.
  * HTML device info generator
  */
-class DeviceInfo {
+public class DeviceInfo {
 
-	final CpuStat stat;
+	public final CpuStat stat;
 	private final List<DeviceNode> nodes;
 
-	DeviceInfo(Kernel k) {
+	public DeviceInfo(Kernel k) {
 		nodes = new ArrayList<>();
 		DeviceNode soc = new SoC();
 		if (soc.hasAny()) {
@@ -30,12 +31,13 @@ class DeviceInfo {
 		}
 		CPU cpu;
 		stat = new CpuStat();
-		for (Kernel.CpuCore cpuCore : k.cpuCores) {
+		for (int i = 0; i < k.getCpuCoreCount(); i++) {
+			Kernel.CpuCore cpuCore = k.getCpuCore(i);
 			cpu = new CPU(cpuCore.getId(), stat);
 			nodes.add(cpu);
 			Log.d(LOG_TAG, "cpu" + cpuCore.getId() + " in cluster " + cpuCore.getCluster() + " detected");
 		}
-		stat.initialize(k.cpuCores.size());
+		stat.initialize(k.getCpuCoreCount());
 		DeviceNode gpu = new GPU();
 		if (gpu.hasAny()) {
 			nodes.add(gpu);
@@ -47,7 +49,7 @@ class DeviceInfo {
 		}
 	}
 
-	String getHtml() {
+	public String getHtml() {
 		StringBuilder sb = new StringBuilder();
 		for (DeviceNode dev : nodes) {
 			try {
@@ -68,7 +70,7 @@ class DeviceInfo {
 		boolean hasAny();
 	}
 
-	class CpuStat implements DeviceNode {
+	public class CpuStat implements DeviceNode {
 
 		// "cpu user nice system idle iowait irq softirq"
 		final Pattern cpu_all = Pattern.compile(
@@ -106,7 +108,7 @@ class DeviceInfo {
 			}
 		}
 
-		void sample() {
+		public void sample() {
 			if (stat == null) {
 				return;
 			}
@@ -452,7 +454,7 @@ class DeviceInfo {
 		CPU(int id, CpuStat stat) {
 			this.id = id;
 			this.stat = stat;
-			core = Kernel.getInstance().cpuCores.get(id);
+			core = Kernel.getInstance().getCpuCore(id);
 			try {
 				maxFreq = core.getMaxFrequency();
 			} catch (Throwable ex) {

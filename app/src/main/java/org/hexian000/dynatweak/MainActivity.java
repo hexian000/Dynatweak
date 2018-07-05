@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
+import org.hexian000.dynatweak.api.Kernel;
 
 import java.util.Properties;
 
@@ -29,7 +30,7 @@ public class MainActivity extends Activity {
 		Kernel k;
 		try {
 			k = Kernel.getInstance();
-			if (!k.cpuCores.get(0).getScalingAvailableGovernors().contains("interactive")) {
+			if (!k.getCpuCore(0).getScalingAvailableGovernors().contains("interactive")) {
 				Toast.makeText(this, R.string.interactive_not_found, Toast.LENGTH_SHORT).show();
 				finish();
 				return;

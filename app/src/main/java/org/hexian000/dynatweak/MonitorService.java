@@ -20,6 +20,8 @@ import android.view.Gravity;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.hexian000.dynatweak.api.DeviceInfo;
+import org.hexian000.dynatweak.api.Kernel;
 
 import java.util.Timer;
 import java.util.TimerTask;

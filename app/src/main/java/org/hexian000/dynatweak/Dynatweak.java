@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class Dynatweak extends Application {
-	static final String LOG_TAG = "Dynatweak";
+	public static final String LOG_TAG = "Dynatweak";
 
 	private static final String PREFERENCES_FILE_NAME = "preferences";
 	private Properties configuration = null;

@@ -1,9 +1,11 @@
-package org.hexian000.dynatweak;
+package org.hexian000.dynatweak.api;
 
 import android.util.Log;
-import eu.chainfire.libsuperuser.Shell;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,11 +16,12 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
  * Created by hexian on 2017/6/18.
  * Kernel interface
  */
-class Kernel {
-	private final static boolean hasRoot = Shell.SU.available();
+public class Kernel {
+	private static final Shell SH = new Shell("sh");
+	private static final Shell SU = new Shell("su");
 	private static Kernel instance = null;
 	private static Pattern blockWithPartition = Pattern.compile("^(/dev/block/\\w+)p\\d+$");
-	final List<CpuCore> cpuCores;
+	private final List<CpuCore> cpuCores;
 	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
 	private Map<String, String> mountPoints;
@@ -116,7 +119,7 @@ class Kernel {
 		int cpuId = 0, cluster = -1;
 		cpuCores = new ArrayList<>();
 		Set<Integer> clusterMap = new HashSet<>();
-		while (new File(cpuPath + "/cpu" + cpuId).exists()) {
+		while (hasNodeByRoot(cpuPath + "/cpu" + cpuId)) {
 			try {
 				CpuCore cpu;
 				switch (raw_id) {
@@ -204,7 +207,7 @@ class Kernel {
 		}
 	}
 
-	static Kernel getInstance() {
+	public static Kernel getInstance() {
 		if (instance == null) {
 			instance = new Kernel();
 		}
@@ -219,11 +222,20 @@ class Kernel {
 		return path;
 	}
 
+	public CpuCore getCpuCore(int id) {
+		return cpuCores.get(id);
+	}
+
+
+	public int getCpuCoreCount() {
+		return cpuCores.size();
+	}
+
 	public String getBlockDevice(String mountPoint) {
 		if (mountPoints == null) {
 			Pattern mountPattern = Pattern.compile("^(\\S+) on (\\S+)");
 			Map<String, String> mountMap = new HashMap<>();
-			List<String> mounts = Shell.SH.run("mount");
+			List<String> mounts = SH.run("mount");
 			for (String mount : mounts) {
 				Matcher m = mountPattern.matcher(mount);
 				if (m.find()) {
@@ -239,15 +251,15 @@ class Kernel {
 		return clusterCount;
 	}
 
-	boolean hasNode(String path) {
+	public boolean hasNode(String path) {
 		return new File(path).exists();
 	}
 
-	boolean hasNodeByRoot(String path) {
-		if (!hasRoot) {
+	public boolean hasNodeByRoot(String path) {
+		if (!SU.isAvailable()) {
 			return hasNode(path);
 		}
-		List<String> result = Shell.SU.run("[ -e '" + path + "' ] && echo OK");
+		List<String> result = SU.run("[ -e '" + path + "' ] && echo OK");
 		return result != null && result.size() > 0 && "OK".equals(result.get(0));
 	}
 
@@ -288,7 +300,7 @@ class Kernel {
 		return ret;
 	}
 
-	List<String> listBlockAvailableScheduler(String node) {
+	public List<String> listBlockAvailableScheduler(String node) {
 		List<String> ret = new ArrayList<>();
 		try {
 			String[] schedulers = readNodeByRoot(node).trim().split(" +");
@@ -329,26 +341,26 @@ class Kernel {
 		}
 	}
 
-	List<FrequencyPolicy> getAllPolicies() {
+	public List<FrequencyPolicy> getAllPolicies() {
 		return frequencyPolicies;
 	}
 
-	boolean hasCoreControl() {
+	public boolean hasCoreControl() {
 		return hasNode("/sys/module/msm_thermal/core_control/cpus_offlined");
 	}
 
-	void setCoreControlMask(int mask) {
+	public void setCoreControlMask(int mask) {
 		setNode("/sys/module/msm_thermal/parameters/enabled", "Y");
 		setNode("/sys/module/msm_thermal/core_control/enabled", "1");
 		setNode("/sys/module/msm_thermal/core_control/cpus_offlined", mask + "");
 	}
 
-	String readNode(String path) throws IOException {
+	public String readNode(String path) throws IOException {
 		return new BufferedReader(new FileReader(path)).readLine();
 	}
 
 	private String readNodeByRoot(String path) {
-		if (!hasRoot) {
+		if (!SU.isAvailable()) {
 			try {
 				return readNode(path);
 			} catch (IOException e) {
@@ -356,7 +368,7 @@ class Kernel {
 				return "";
 			}
 		}
-		List<String> result = Shell.SU.run("cat '" + path + "'");
+		List<String> result = SU.run("cat '" + path + "'");
 		if (result != null && result.size() > 0) {
 			StringBuilder sb = new StringBuilder();
 			for (String line : result) {
@@ -369,23 +381,23 @@ class Kernel {
 		}
 	}
 
-	void commit() {
+	public void commit() {
 		Log.d(LOG_TAG, "Committing " + commands.size() + " lines...");
-		List<String> result = Shell.SU.run(commands);
+		List<String> result = SU.run(commands);
 		for (String line : result) {
 			Log.d(LOG_TAG, "STDOUT: " + line);
 		}
 		commands.clear();
 	}
 
-	void setNode(String path, String value) {
+	public void setNode(String path, String value) {
 		commands.add("[ -f '" + path + "' ] && " +
 				"echo '" + value + "'>'" + path + "'");
 	}
 
-	boolean trySetNode(String node, String value) {
+	public boolean trySetNode(String node, String value) {
 		if (hasNode(node)) {
-			List<String> result = Shell.SU.run("echo '" + value + "'>'" + node + "' ; cat '" + node + "'");
+			List<String> result = SU.run("echo '" + value + "'>'" + node + "' ; cat '" + node + "'");
 			if (result != null && result.size() > 0) {
 				if (result.get(0).equals(value)) {
 					return true;
@@ -403,22 +415,22 @@ class Kernel {
 		return false;
 	}
 
-	void setSysctl(String node, String value) {
+	public void setSysctl(String node, String value) {
 		String path = "/proc/sys/" + node.replace('.', '/');
 		commands.add("( [ -f '" + path + "' ] && echo '" + value + "' > " + path + " ) || " +
 				"( [ ! -z `which sysctl` ] && sysctl -w " + node + "=" + value + " )");
 	}
 
-	void runAsRoot(String command) {
+	public void runAsRoot(String command) {
 		// Log.d(LOG_TAG, command);
-		Shell.SU.run(command);
+		SU.run(command);
 	}
 
 	int getSocRawID() {
 		return raw_id;
 	}
 
-	class FrequencyPolicy {
+	public class FrequencyPolicy {
 		private final int StartCpu;
 		private final int[] AffectedCpu;
 		private final String PolicyPath;
@@ -429,20 +441,20 @@ class Kernel {
 			PolicyPath = path;
 		}
 
-		int getStartCpu() {
+		public int getStartCpu() {
 			return StartCpu;
 		}
 
-		String getPolicyPath() {
+		public String getPolicyPath() {
 			return PolicyPath;
 		}
 
-		int getCpuCount() {
+		public int getCpuCount() {
 			return AffectedCpu.length;
 		}
 	}
 
-	class CpuCore {
+	public class CpuCore {
 		private final int id;
 		private final String path;
 		AdaptiveTempReader tempNode = null;
@@ -470,11 +482,11 @@ class Kernel {
 			this.policy = policy;
 		}
 
-		int getId() {
+		public int getId() {
 			return id;
 		}
 
-		int getCluster() {
+		public int getCluster() {
 			return cluster;
 		}
 
@@ -482,7 +494,7 @@ class Kernel {
 			cluster = newCluster;
 		}
 
-		String getPath() {
+		public String getPath() {
 			return path;
 		}
 
@@ -498,12 +510,12 @@ class Kernel {
 			return scaling_available_frequencies;
 		}
 
-		List<String> getScalingAvailableGovernors() throws IOException {
+		public List<String> getScalingAvailableGovernors() throws IOException {
 			String governors = readNode(path + "/cpufreq/scaling_available_governors");
 			return Arrays.asList(governors.trim().split(" "));
 		}
 
-		int fitFrequency(int frequency) throws IOException {
+		public int fitFrequency(int frequency) throws IOException {
 			if (scaling_available_frequencies == null) {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
@@ -515,7 +527,7 @@ class Kernel {
 			return scaling_available_frequencies.get(scaling_available_frequencies.size() - 1);
 		}
 
-		int fitPercentage(double percentage) throws IOException {
+		public int fitPercentage(double percentage) throws IOException {
 			if (scaling_available_frequencies == null) {
 				scaling_available_frequencies = getScalingAvailableFrequencies();
 			}
@@ -523,7 +535,7 @@ class Kernel {
 					(int) (scaling_available_frequencies.get(scaling_available_frequencies.size() - 1) * percentage));
 		}
 
-		void setScalingMaxFrequency(int frequency) {
+		public void setScalingMaxFrequency(int frequency) {
 			setNode(path + "/cpufreq/scaling_max_freq", frequency + "");
 		}
 
@@ -536,17 +548,17 @@ class Kernel {
 			return Integer.parseInt(ret);
 		}
 
-		int getMaxFrequency() throws IOException {
+		public int getMaxFrequency() throws IOException {
 			String ret = readNode(path + "/cpufreq/cpuinfo_max_freq");
 			return Integer.parseInt(ret);
 		}
 
-		int getMinFrequency() throws IOException {
+		public int getMinFrequency() throws IOException {
 			String ret = readNode(path + "/cpufreq/cpuinfo_min_freq");
 			return Integer.parseInt(ret);
 		}
 
-		void trySetGovernor(String governor) {
+		public void trySetGovernor(String governor) {
 			trySetNode(path + "/cpufreq/scaling_governor", governor);
 		}
 
@@ -561,7 +573,7 @@ class Kernel {
 			return ret;
 		}
 
-		void setOnline(boolean online) {
+		public void setOnline(boolean online) {
 			if (online) {
 				for (int putOnline = 0; putOnline < 10; putOnline++) {
 					setNode(path + "/online", "1");
@@ -579,7 +591,7 @@ class Kernel {
 			}
 		}
 
-		boolean trySetOnline(boolean online) {
+		public boolean trySetOnline(boolean online) {
 			String value = "0";
 			if (online) {
 				value = "1";
@@ -609,49 +621,5 @@ class Kernel {
 		double getTemperature() throws IOException {
 			return tempNode.read();
 		}
-	}
-}
-
-class AdaptiveTempReader {
-	private double divider;
-	private RandomAccessFile fr;
-
-	AdaptiveTempReader(String node) throws FileNotFoundException {
-		try {
-			fr = new RandomAccessFile(node, "r");
-			divider = 1.0;
-			read();
-		} catch (Throwable e) {
-			Log.w(LOG_TAG, "AdaptiveTempReader node=" + node, e);
-			throw new FileNotFoundException();
-		}
-	}
-
-	double read() throws IOException {
-		fr.seek(0);
-		int raw = Integer.parseInt(fr.readLine());
-		double value = raw / divider;
-		while (Math.abs(value) >= 130.0) {
-			divider *= 10.0;
-			value = raw / divider;
-		}
-		return value;
-	}
-}
-
-class MaxTempReader extends AdaptiveTempReader {
-
-	private double max = 0;
-
-	MaxTempReader(String node) throws FileNotFoundException {
-		super(node);
-	}
-
-	double read() throws IOException {
-		double value = super.read();
-		if (value > max) {
-			max = value;
-		}
-		return max;
 	}
 }
