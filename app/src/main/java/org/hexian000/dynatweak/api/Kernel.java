@@ -17,7 +17,6 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
  * Kernel interface
  */
 public class Kernel {
-	private static final Shell SH = new Shell("sh");
 	private static final Shell SU = new Shell("su");
 	private static Kernel instance = null;
 	private static Pattern blockWithPartition = Pattern.compile("^(/dev/block/\\w+)p\\d+$");
@@ -235,7 +234,7 @@ public class Kernel {
 		if (mountPoints == null) {
 			Pattern mountPattern = Pattern.compile("^(\\S+) on (\\S+)");
 			Map<String, String> mountMap = new HashMap<>();
-			List<String> mounts = SH.run("mount");
+			List<String> mounts = SU.run("mount");
 			for (String mount : mounts) {
 				Matcher m = mountPattern.matcher(mount);
 				if (m.find()) {
@@ -385,7 +384,7 @@ public class Kernel {
 		Log.d(LOG_TAG, "Committing " + commands.size() + " lines...");
 		List<String> result = SU.run(commands);
 		for (String line : result) {
-			Log.d(LOG_TAG, "STDOUT: " + line);
+			Log.d(LOG_TAG, "TTY: " + line);
 		}
 		commands.clear();
 	}

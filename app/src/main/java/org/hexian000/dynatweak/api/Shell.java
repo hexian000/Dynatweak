@@ -14,8 +14,14 @@ public class Shell {
 	private Scanner in = null;
 
 	public Shell(String command) {
+		this(command, false);
+	}
+
+	public Shell(String command, boolean collectStderr) {
 		try {
-			shell = Runtime.getRuntime().exec(command);
+			shell = new ProcessBuilder(command)
+					.redirectErrorStream(collectStderr)
+					.start();
 			in = new Scanner(shell.getInputStream());
 			out = new PrintStream(shell.getOutputStream());
 		} catch (IOException ignored) {
