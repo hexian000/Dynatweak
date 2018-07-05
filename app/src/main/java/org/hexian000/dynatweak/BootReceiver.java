@@ -54,23 +54,8 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/workqueue/parameters/power_efficent", "Y");
 
 		// IO
-		List<String> block = k.listBlockDevices();
-		for (String i : block) {
-			Log.i(LOG_TAG, "block device detected: " + i);
-			if (k.hasNode(i + "/queue/scheduler")) {
-				k.setNode(i + "/queue/read_ahead_kb", "1024");
-				List<String> schedulers = k.listBlockAvailableScheduler(i + "/queue/scheduler");
-				if (schedulers.contains("bfq")) {
-					k.setNode(i + "/queue/scheduler", "bfq");
-					k.setNode(i + "/queue/iosched/low_latency", "1");
-					k.setNode(i + "/queue/iosched/slice_idle", "0");
-				} else if (schedulers.contains("cfq")) {
-					k.setNode(i + "/queue/scheduler", "cfq");
-					k.setNode(i + "/queue/iosched/low_latency", "1");
-					k.setNode(i + "/queue/iosched/slice_idle", "0");
-				}
-			}
-		}
+		tweakBlockDevice(k, "/cache");
+		tweakBlockDevice(k, "/data");
 
 		List<Kernel.FrequencyPolicy> allPolicy = k.getAllPolicies();
 		List<String> allGovernors = cpu0.getScalingAvailableGovernors();
@@ -602,6 +587,27 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/ondemand/up_threshold_any_cpu_load", "90");
 				k.setNode(policy + "/ondemand/up_threshold_multi_core", "80");
 				break;
+			}
+		}
+	}
+
+	private static void tweakBlockDevice(final Kernel k, final String mountPoint) {
+		String path = k.getBlockDevice(mountPoint);
+		if (path != null && path.startsWith("/dev/block/")) {
+			path = "/sys" + path.substring(4);
+			if (k.hasNode(path + "/queue/scheduler")) {
+				Log.i(LOG_TAG, "block device detected: " + path);
+				k.setNode(path + "/queue/read_ahead_kb", "1024");
+				List<String> schedulers = k.listBlockAvailableScheduler(path + "/queue/scheduler");
+				if (schedulers.contains("bfq")) {
+					k.setNode(path + "/queue/scheduler", "bfq");
+					k.setNode(path + "/queue/iosched/low_latency", "1");
+					k.setNode(path + "/queue/iosched/slice_idle", "0");
+				} else if (schedulers.contains("cfq")) {
+					k.setNode(path + "/queue/scheduler", "cfq");
+					k.setNode(path + "/queue/iosched/low_latency", "1");
+					k.setNode(path + "/queue/iosched/slice_idle", "0");
+				}
 			}
 		}
 	}

@@ -5,6 +5,8 @@ import eu.chainfire.libsuperuser.Shell;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
@@ -14,17 +16,16 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
  */
 class Kernel {
 	private final static boolean hasRoot = Shell.SU.available();
-	private final static boolean isSELinux = Shell.SU.isSELinuxEnforcing();
 	private static Kernel instance = null;
 	final List<CpuCore> cpuCores;
 	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
+	private Map<String, String> mountPoints;
 	private int raw_id;
 	private int clusterCount;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	private Kernel() {
-		Log.d(LOG_TAG, "hasRoot:" + hasRoot + " isSELinux:" + isSELinux);
 		commands = new ArrayList<>();
 		raw_id = -1;
 		final String raw_id_nodes[] = {"/sys/devices/system/soc/soc0/raw_id", "/sys/devices/soc0/raw_id"};
@@ -207,6 +208,22 @@ class Kernel {
 			instance = new Kernel();
 		}
 		return instance;
+	}
+
+	public String getBlockDevice(String mountPoint) {
+		if (mountPoints == null) {
+			Pattern mountPattern = Pattern.compile("^(\\S+) on (\\S+)");
+			Map<String, String> mountMap = new HashMap<>();
+			List<String> mounts = Shell.SH.run("mount");
+			for (String mount : mounts) {
+				Matcher m = mountPattern.matcher(mount);
+				if (m.find()) {
+					mountMap.put(m.group(2), m.group(1));
+				}
+			}
+			mountPoints = Collections.unmodifiableMap(mountMap);
+		}
+		return mountPoints.get(mountPoint);
 	}
 
 	public int getClusterCount() {
