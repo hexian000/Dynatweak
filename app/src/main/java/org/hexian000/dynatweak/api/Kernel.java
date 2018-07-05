@@ -19,7 +19,8 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 public class Kernel {
 	private static final Shell SU = new Shell("su");
 	private static Kernel instance = null;
-	private static Pattern blockWithPartition = Pattern.compile("^(/dev/block/\\w+)p\\d+$");
+	private static Pattern mmcBlockWithPartition = Pattern.compile("^(/dev/block/mmcblk\\d+)p\\d+$");
+	private static Pattern scsiBlockWithPartition = Pattern.compile("^(/dev/block/sd[a-z])\\d+$");
 	private final List<CpuCore> cpuCores;
 	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
@@ -215,7 +216,11 @@ public class Kernel {
 	}
 
 	private static String removeBlockPartition(String path) {
-		Matcher m = blockWithPartition.matcher(path);
+		Matcher m = mmcBlockWithPartition.matcher(path);
+		if (m.find()) {
+			return m.group(1);
+		}
+		m = scsiBlockWithPartition.matcher(path);
 		if (m.find()) {
 			return m.group(1);
 		}
