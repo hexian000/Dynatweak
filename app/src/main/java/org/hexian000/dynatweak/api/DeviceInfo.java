@@ -96,6 +96,28 @@ public class DeviceInfo {
 
 class CpuStat implements DeviceNode {
 
+	/*
+	- user: normal processes executing in user mode
+	- nice: niced processes executing in user mode
+	- system: processes executing in kernel mode
+	- idle: twiddling thumbs
+	- iowait: In a word, iowait stands for waiting for I/O to complete. But there
+	  are several problems:
+	  1. Cpu will not wait for I/O to complete, iowait is the time that a task is
+	     waiting for I/O to complete. When cpu goes into idle state for
+	     outstanding task io, another task will be scheduled on this CPU.
+	  2. In a multi-core CPU, the task waiting for I/O to complete is not running
+	     on any CPU, so the iowait of each CPU is difficult to calculate.
+	  3. The value of iowait field in /proc/stat will decrease in certain
+	     conditions.
+	  So, the iowait is not reliable by reading from /proc/stat.
+	- irq: servicing interrupts
+	- softirq: servicing softirqs
+	- steal: involuntary wait
+	- guest: running a normal guest
+	- guest_nice: running a niced guest
+	*/
+
 	// "cpu user nice system idle iowait irq softirq"
 	private final Pattern cpu_all = Pattern.compile(
 			"^cpu {2}(\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+)",
@@ -626,6 +648,22 @@ class Block implements DeviceNode {
 			Log.w(LOG_TAG, "block monitor for " + node, e);
 		}
 	}
+
+	/*
+	 * Name            units         description
+	 * ----            -----         -----------
+	 * read I/Os       requests      number of read I/Os processed
+	 * read merges     requests      number of read I/Os merged with in-queue I/O
+	 * read sectors    sectors       number of sectors read
+	 * read ticks      milliseconds  total wait time for read requests
+	 * write I/Os      requests      number of write I/Os processed
+	 * write merges    requests      number of write I/Os merged with in-queue I/O
+	 * write sectors   sectors       number of sectors written
+	 * write ticks     milliseconds  total wait time for write requests
+	 * in_flight       requests      number of I/Os currently in flight
+	 * io_ticks        milliseconds  total time this block device has been active
+	 * time_in_queue   milliseconds  total wait time for all requests
+	 */
 
 	@Override
 	public void generateHtml(StringBuilder out) throws IOException {
