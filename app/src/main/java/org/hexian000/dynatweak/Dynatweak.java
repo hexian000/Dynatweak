@@ -10,6 +10,7 @@ public class Dynatweak extends Application {
 	public static final String LOG_TAG = "Dynatweak";
 
 	private static final String PREFERENCES_FILE_NAME = "preferences";
+	MonitorService monitorService = null;
 	private Properties configuration = null;
 
 	void saveConfiguration() {

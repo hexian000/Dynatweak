@@ -35,12 +35,12 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 public class MonitorService extends Service {
 	private final static String CHANNEL_MONITOR = "monitor_overlay";
 
-	static MonitorService instance = null;
 	private final Handler handler = new Handler();
 	private boolean visible = false;
 	private Timer timer = null;
 	private WindowManager windowManager = null;
 	private MonitorOverlay monitorOverlay = null;
+	private TextView monitorTextView = null;
 	private BroadcastReceiver eventListener = null;
 	private DeviceInfo deviceInfo = null;
 
@@ -137,7 +137,7 @@ public class MonitorService extends Service {
 			registerReceiver(eventListener, filter);
 		}
 		showMonitor();
-		instance = this;
+		((Dynatweak) getApplicationContext()).monitorService = this;
 		return START_STICKY;
 	}
 
@@ -164,17 +164,16 @@ public class MonitorService extends Service {
 		if (deviceInfo != null) {
 			deviceInfo = null;
 		}
-		instance = null;
+		((Dynatweak) getApplicationContext()).monitorService = null;
 		super.onDestroy();
 	}
 
 	private void updateOverlay() {
-		if (monitorOverlay != null) {
-			TextView textView = monitorOverlay.findViewById(R.id.textView);
+		if (monitorTextView != null) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-				textView.setText(Html.fromHtml(deviceInfo.getHtml(), Html.FROM_HTML_MODE_COMPACT));
+				monitorTextView.setText(Html.fromHtml(deviceInfo.getHtml(), Html.FROM_HTML_MODE_COMPACT));
 			} else {
-				textView.setText(Html.fromHtml(deviceInfo.getHtml()));
+				monitorTextView.setText(Html.fromHtml(deviceInfo.getHtml()));
 			}
 		}
 	}
@@ -191,7 +190,7 @@ public class MonitorService extends Service {
 		monitorOverlay = new MonitorOverlay(context);
 
 		WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-		if (Build.VERSION.SDK_INT >= 26) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 		} else {
 			layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
@@ -207,6 +206,8 @@ public class MonitorService extends Service {
 
 		windowManager.addView(monitorOverlay, layoutParams);
 		visible = true;
+
+		monitorTextView = monitorOverlay.findViewById(R.id.textView);
 	}
 
 	private void removeOverlay() {
@@ -215,6 +216,7 @@ public class MonitorService extends Service {
 			windowManager.removeView(monitorOverlay);
 			windowManager = null;
 			monitorOverlay = null;
+			monitorTextView = null;
 		}
 	}
 

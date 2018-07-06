@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
 		checkBootTweak.setChecked(onBoot);
 		boolean service = config.getProperty("dynatweak_service", "disabled").equals("enabled");
 		toggleService.setChecked(service);
-		if (service && MonitorService.instance == null) {
+		if (service && ((Dynatweak) getApplicationContext()).monitorService == null) {
 			Intent intent1 = new Intent(this, MonitorService.class);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				startForegroundService(intent1);
@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
 				startService(intent1);
 			}
 		}
-		if (!service && MonitorService.instance != null) {
+		if (!service && ((Dynatweak) getApplicationContext()).monitorService != null) {
 			stopService(new Intent(this, MonitorService.class));
 		}
 
