@@ -25,9 +25,8 @@ public class BootReceiver extends BroadcastReceiver {
 		Kernel.CpuCore cpu0 = k.getCpuCore(0);
 
 		// CPU Hotplug
-		if (k.hasNode("/system/bin/mpdecision")) {
-			k.runAsRoot("stop mpdecision");
-		}
+		k.runAsRoot(
+				"mpdecision_pid=`pgrep mpdecision` && ( stop mpdecision ; killall mpdecision ; wait $mpdecision_pid )");
 		k.setNode("/proc/hps/enabled", "0");
 
 		// Thermal
