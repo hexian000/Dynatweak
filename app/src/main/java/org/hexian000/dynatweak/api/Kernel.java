@@ -17,7 +17,7 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
  * Kernel interface
  */
 public class Kernel {
-	private static final Shell SU = new Shell("su");
+	static final Shell SU = new Shell("su");
 	private static Kernel instance = null;
 	private static Pattern mmcBlockWithPartition = Pattern.compile("^(/dev/block/mmcblk\\d+)p\\d+$");
 	private static Pattern scsiBlockWithPartition = Pattern.compile("^(/dev/block/sd[a-z])\\d+$");

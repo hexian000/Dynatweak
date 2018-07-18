@@ -121,7 +121,6 @@ class CpuStat implements DeviceNode {
 	private final Pattern cpu_all = Pattern.compile(
 			"^cpu {2}(\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+) (\\d+)",
 			Pattern.UNIX_LINES | Pattern.MULTILINE);
-	private final byte[] buf = new byte[4096];
 	private Pattern[] cpu_line;
 	private long cpu_iowait[], cpu_idle[], cpu_total[];
 	private int count;
@@ -129,7 +128,7 @@ class CpuStat implements DeviceNode {
 	private long last_iowait[], last_idle[], last_total[];
 	private long cpu_all_idle, cpu_all_iowait, cpu_all_total;
 	private long last_cpu_all_idle, last_cpu_all_iowait, last_cpu_all_total;
-	private RandomAccessFile stat;
+	private NodeMonitor stat;
 
 	void initialize(int count) {
 		last_iowait = new long[count];
@@ -147,9 +146,14 @@ class CpuStat implements DeviceNode {
 					Pattern.UNIX_LINES | Pattern.MULTILINE);
 		}
 		try {
-			stat = new RandomAccessFile("/proc/stat", "r");
+			stat = new NodeMonitor("/proc/stat");
 		} catch (Throwable ex) {
 			Log.e(LOG_TAG, "cannot access /proc/stat", ex);
+			try {
+				stat = new NodeMonitor("/proc/stat", Kernel.SU);
+			} catch (Throwable ex2) {
+				Log.e(LOG_TAG, "root cannot access /proc/stat", ex);
+			}
 		}
 	}
 
@@ -158,13 +162,7 @@ class CpuStat implements DeviceNode {
 			return;
 		}
 		try {
-			stat.seek(0);
-			String data;
-			{
-				stat.seek(0);
-				int read = stat.read(buf);
-				data = new String(buf, 0, read);
-			}
+			String data = stat.readAll();
 			{
 				Matcher m = cpu_all.matcher(data);
 				if (m.find()) {
@@ -668,7 +666,15 @@ class Block implements DeviceNode {
 			sample();
 			swap();
 		} catch (IOException e) {
-			Log.w(LOG_TAG, "block monitor for " + block, e);
+			Log.e(LOG_TAG, "block monitor for " + block, e);
+			try {
+				node = new NodeMonitor("/sys/block/" + block + "/stat", Kernel.SU);
+				sample();
+				swap();
+			} catch (IOException e2) {
+				Log.e(LOG_TAG, "root block monitor for " + block, e2);
+				node = null;
+			}
 			node = null;
 		}
 	}
@@ -685,7 +691,7 @@ class Block implements DeviceNode {
 	}
 
 	private void sample() throws IOException {
-		Matcher m = statPattern.matcher(node.read());
+		Matcher m = statPattern.matcher(node.readLine());
 		if (!m.find()) {
 			node = null;
 			throw new IOException("block stat pattern mismatch");
