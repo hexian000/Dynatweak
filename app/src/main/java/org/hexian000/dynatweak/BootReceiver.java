@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
+import android.util.SparseArray;
 import android.widget.Toast;
 import org.hexian000.dynatweak.api.Kernel;
 
@@ -325,6 +326,13 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setNode("/sys/module/cpu_boost/parameters/input_boost_freq_s2", boostFreq_s2.toString());
 		k.setNode("/sys/module/cpu_boost/parameters/input_boost_ms", "80");
 		k.setNode("/sys/module/cpu_boost/parameters/input_boost_ms_s2", "160");
+		switch (profile) {
+		case Dynatweak.Profiles.PERFORMANCE:
+		case Dynatweak.Profiles.GAMING:
+			k.setNode("/sys/module/cpu_boost/input_boost_enabled", "1");
+		default:
+			k.setNode("/sys/module/cpu_boost/input_boost_enabled", "0");
+		}
 
 		// GPU
 		final String gpuNodeRoot = "/sys/class/kgsl/kgsl-3d0";
@@ -389,22 +397,33 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Hotplugs.ALLCORES: // all cores
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "0");
 			break;
-		case Dynatweak.Hotplugs.LITTLECORES: // little cluster or half core
+		case Dynatweak.Hotplugs.HALFCORES: // half core
 			final int cluster = k.getClusterCount();
 			Log.d(LOG_TAG, "cluster count: " + cluster);
-			int mask = 0;
+			boolean hasCoreControl = k.hasCoreControl();
+			SparseArray<List<Kernel.CpuCore>> cpuMap = new SparseArray<>();
 			for (int i = 0; i < k.getCpuCoreCount(); i++) {
 				Kernel.CpuCore cpu = k.getCpuCore(i);
-				boolean set;
-				if (cluster > 1 ? cpu.getCluster() == 0 : cpu.getId() < k.getCpuCoreCount() / 2) {
-					set = true;
-				} else {
-					mask |= 1 << cpu.getId();
-					set = false;
+				List<Kernel.CpuCore> cpuList = cpuMap.get(i);
+				if (cpuList == null) {
+					cpuList = new ArrayList<>();
+					cpuMap.put(i, cpuList);
 				}
-				cpu.setOnline(set);
+				cpuList.add(cpu);
 			}
-			if (k.hasCoreControl()) {
+
+			int mask = 0;
+			for (int i = 0; i < cpuMap.size(); i++) {
+				List<Kernel.CpuCore> cpuList = cpuMap.valueAt(i);
+				for (int j = cpuList.size() / 2; j < cpuList.size(); j++) {
+					if (hasCoreControl) {
+						mask |= 1 << cpuList.get(j).getId();
+					} else {
+						cpuList.get(j).setOnline(false);
+					}
+				}
+			}
+			if (hasCoreControl) {
 				k.setCoreControlMask(mask);
 			}
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");

@@ -54,7 +54,7 @@ public class Dynatweak extends Application {
 
 	static class Hotplugs {
 		static final int ALLCORES = 0;
-		static final int LITTLECORES = 1;
+		static final int HALFCORES = 1;
 		static final int DRIVER = 2;
 
 		static final int DEFAULT = ALLCORES;
