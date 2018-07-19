@@ -26,9 +26,8 @@ public class BootReceiver extends BroadcastReceiver {
 		Kernel.CpuCore cpu0 = k.getCpuCore(0);
 
 		// CPU Hotplug
-		if (k.hasNode("/system/bin/mpdecision")) {
-			k.runAsRoot("stop mpdecision");
-		}
+		k.runAsRoot(
+				"mpdecision_pid=`pgrep mpdecision` && ( stop mpdecision ; killall mpdecision ; wait $mpdecision_pid )");
 		k.setNode("/proc/hps/enabled", "0");
 
 		// Thermal
@@ -46,7 +45,9 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setSysctl("vm.dirty_ratio", "25");
 		k.setSysctl("vm.dirty_background_ratio", "20");
 		k.setSysctl("vm.dirty_expire_centisecs", "3000");
-		k.setSysctl("vm.dirty_writeback_centisecs", "1000");
+		k.setSysctl("vm.dirty_writeback_centisecs", "2000");
+		k.setSysctl("vm.swappiness", "0");
+		k.setSysctl("vm.vfs_cache_pressure", "50");
 
 		// Misc
 		k.setNode("/sys/kernel/fast_charge/force_fast_charge", "1");

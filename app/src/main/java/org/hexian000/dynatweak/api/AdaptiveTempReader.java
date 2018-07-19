@@ -22,7 +22,7 @@ public class AdaptiveTempReader {
 	}
 
 	double read() throws IOException {
-		int raw = Integer.parseInt(node.read());
+		int raw = Integer.parseInt(node.readLine());
 		double value = raw / divider;
 		while (Math.abs(value) >= 130.0) {
 			divider *= 10.0;
