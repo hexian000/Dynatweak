@@ -405,10 +405,10 @@ public class BootReceiver extends BroadcastReceiver {
 			SparseArray<List<Kernel.CpuCore>> cpuMap = new SparseArray<>();
 			for (int i = 0; i < k.getCpuCoreCount(); i++) {
 				Kernel.CpuCore cpu = k.getCpuCore(i);
-				List<Kernel.CpuCore> cpuList = cpuMap.get(i);
+				List<Kernel.CpuCore> cpuList = cpuMap.get(cpu.getCluster());
 				if (cpuList == null) {
 					cpuList = new ArrayList<>();
-					cpuMap.put(i, cpuList);
+					cpuMap.put(cpu.getCluster(), cpuList);
 				}
 				cpuList.add(cpu);
 			}
@@ -416,7 +416,7 @@ public class BootReceiver extends BroadcastReceiver {
 			int mask = 0;
 			for (int i = 0; i < cpuMap.size(); i++) {
 				List<Kernel.CpuCore> cpuList = cpuMap.valueAt(i);
-				for (int j = cpuList.size() / 2; j < cpuList.size(); j++) {
+				for (int j = (cpuList.size() + 1) / 2; j < cpuList.size(); j++) {
 					if (hasCoreControl) {
 						mask |= 1 << cpuList.get(j).getId();
 					} else {
@@ -425,6 +425,7 @@ public class BootReceiver extends BroadcastReceiver {
 				}
 			}
 			if (hasCoreControl) {
+				Log.d(LOG_TAG, "setCoreControlMask: " + mask);
 				k.setCoreControlMask(mask);
 			}
 			k.setNode("/sys/devices/system/cpu/sched_mc_power_savings", "1");
