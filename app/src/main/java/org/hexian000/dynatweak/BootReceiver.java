@@ -11,6 +11,7 @@ import org.hexian000.dynatweak.api.Kernel;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 
@@ -58,7 +59,8 @@ public class BootReceiver extends BroadcastReceiver {
 		tweakBlockDevices(k, new String[]{"/cache", "/data"});
 
 		List<Kernel.FrequencyPolicy> allPolicy = k.getAllPolicies();
-		List<String> allGovernors = cpu0.getScalingAvailableGovernors();
+		final String defaultGovernor = "interactive";
+		Set<String> allGovernors = new HashSet<>(cpu0.getScalingAvailableGovernors());
 		List<String> governor = new ArrayList<>();
 		List<Integer> profiles = new ArrayList<>();
 		final boolean multiPolicy = allPolicy.size() > 1;
@@ -69,22 +71,22 @@ public class BootReceiver extends BroadcastReceiver {
 			case Dynatweak.Profiles.DISABLED:
 				break;
 			case Dynatweak.Profiles.POWERSAVE: {
-				final String[] preferList = {};
+				final String[] preferList = {defaultGovernor};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			case Dynatweak.Profiles.BALANCED: {
-				final String[] preferList = {};
+				final String[] preferList = {defaultGovernor};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			case Dynatweak.Profiles.PERFORMANCE: {
-				final String[] preferList = {"ondemand"};
+				final String[] preferList = {"ondemand", defaultGovernor};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
 			case Dynatweak.Profiles.GAMING: {
-				final String[] preferList = {"performance", "ondemand"};
+				final String[] preferList = {"performance", "ondemand", defaultGovernor};
 				governor.add(preferGovernor(allGovernors, preferList));
 				break;
 			}
@@ -98,17 +100,17 @@ public class BootReceiver extends BroadcastReceiver {
 					break;
 				case Dynatweak.Profiles.POWERSAVE: {
 					if (i == 0) {
-						final String[] preferList = {};
+						final String[] preferList = {defaultGovernor};
 						governor.add(preferGovernor(allGovernors, preferList));
 					} else {
-						final String[] preferList = {};
+						final String[] preferList = {defaultGovernor};
 						governor.add(preferGovernor(allGovernors, preferList));
 					}
 					profiles.add(Dynatweak.Profiles.POWERSAVE);
 					break;
 				}
 				case Dynatweak.Profiles.BALANCED: {
-					final String[] preferList = {};
+					final String[] preferList = {defaultGovernor};
 					governor.add(preferGovernor(allGovernors, preferList));
 					if (i == 0) {
 						profiles.add(Dynatweak.Profiles.BALANCED);
@@ -119,18 +121,18 @@ public class BootReceiver extends BroadcastReceiver {
 				}
 				case Dynatweak.Profiles.PERFORMANCE: {
 					if (i == 0) {
-						final String[] preferList = {};
+						final String[] preferList = {defaultGovernor};
 						governor.add(preferGovernor(allGovernors, preferList));
 						profiles.add(Dynatweak.Profiles.PERFORMANCE);
 					} else {
-						final String[] preferList = {};
+						final String[] preferList = {defaultGovernor};
 						governor.add(preferGovernor(allGovernors, preferList));
 						profiles.add(Dynatweak.Profiles.BALANCED);
 					}
 					break;
 				}
 				case Dynatweak.Profiles.GAMING: {
-					final String[] preferList = {"performance"};
+					final String[] preferList = {"performance", defaultGovernor};
 					governor.add(preferGovernor(allGovernors, preferList));
 					profiles.add(Dynatweak.Profiles.GAMING);
 					break;
@@ -345,52 +347,78 @@ public class BootReceiver extends BroadcastReceiver {
 			} catch (Throwable ignore) {
 			}
 		}
+		Set<String> gpu_available_governors = new HashSet<>();
+		if (k.hasNode(gpuNodeRoot + "/devfreq/governor")) {
+			String[] list = k.readNode(gpuNodeRoot + "/devfreq/available_governors").split(Pattern.quote(" "));
+			Collections.addAll(gpu_available_governors, list);
+		}
 
 		switch (profile) {
 		case Dynatweak.Profiles.DISABLED:
 			break;
 		case Dynatweak.Profiles.POWERSAVE: // maximize battery life
-			if (num_pwrlevels != null) {
-				try {
-					k.setNode(gpuNodeRoot + "/max_pwrlevel", (num_pwrlevels - 1) + "");
-					k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
-				} catch (Throwable ignore) {
-				}
+		{
+			final String g = preferGovernor(gpu_available_governors,
+					new String[]{"powersave", "msm-adreno-tz"});
+			if (g != null) {
+				k.setNode(gpuNodeRoot + "/devfreq/governor", g);
+			} else if (num_pwrlevels != null) {
+				k.setNode(gpuNodeRoot + "/max_pwrlevel", (num_pwrlevels - 1) + "");
+				k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
 			}
-			break;
+		}
+		break;
 		case Dynatweak.Profiles.BALANCED: // governor controlled with idler
+		{
 			// Adreno Idler
 			k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "Y");
 			k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_downdifferential", "40");
 			k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_idleworkload", "8000");
 			k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_idlewait", "50");
-			if (num_pwrlevels != null) {
+			final String g = preferGovernor(gpu_available_governors,
+					new String[]{"msm-adreno-tz", "simple_ondemand", "simple", "ondemand"});
+			if (g != null) {
+				k.setNode(gpuNodeRoot + "/devfreq/governor", g);
+			} else if (num_pwrlevels != null) {
 				try {
 					k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
 					k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
 				} catch (Throwable ignore) {
 				}
 			}
-			break;
+		}
+		break;
 		case Dynatweak.Profiles.PERFORMANCE: // governor controlled without idler
+		{
 			k.setNode("/sys/module/adreno_idler/parameters/adreno_idler_active", "N");
-			if (num_pwrlevels != null) {
+			final String g = preferGovernor(gpu_available_governors,
+					new String[]{"simple_ondemand", "ondemand", "simple", "msm-adreno-tz"});
+			if (g != null) {
+				k.setNode(gpuNodeRoot + "/devfreq/governor", g);
+			} else if (num_pwrlevels != null) {
 				try {
 					k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
 					k.setNode(gpuNodeRoot + "/min_pwrlevel", (num_pwrlevels - 1) + "");
 				} catch (Throwable ignore) {
 				}
 			}
-			break;
+		}
+		break;
 		case Dynatweak.Profiles.GAMING: // maximize performance
-			if (num_pwrlevels != null) {
+		{
+			final String g = preferGovernor(gpu_available_governors,
+					new String[]{"performance", "simple_ondemand", "ondemand", "simple", "msm-adreno-tz"});
+			if (g != null) {
+				k.setNode(gpuNodeRoot + "/devfreq/governor", g);
+			} else if (num_pwrlevels != null) {
 				try {
 					k.setNode(gpuNodeRoot + "/max_pwrlevel", "0");
 					k.setNode(gpuNodeRoot + "/min_pwrlevel", "0");
 				} catch (Throwable ignore) {
 				}
 			}
-			break;
+		}
+		break;
 		}
 
 		// hotplug
@@ -452,13 +480,13 @@ public class BootReceiver extends BroadcastReceiver {
 		Log.i(LOG_TAG, "Finished tweaking...");
 	}
 
-	private static String preferGovernor(List<String> allGovernors, String[] names) {
+	private static String preferGovernor(Set<String> allGovernors, String[] names) {
 		for (String name : names) {
 			if (allGovernors.contains(name)) {
 				return name;
 			}
 		}
-		return "interactive";
+		return null;
 	}
 
 	private static String setAllCoresTheSame(String value, int core) {
