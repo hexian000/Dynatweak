@@ -675,7 +675,6 @@ class Block implements DeviceNode {
 				Log.e(LOG_TAG, "root block monitor for " + block, e2);
 				node = null;
 			}
-			node = null;
 		}
 	}
 
