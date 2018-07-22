@@ -447,9 +447,8 @@ public class BootReceiver extends BroadcastReceiver {
 				for (int j = (cpuList.size() + 1) / 2; j < cpuList.size(); j++) {
 					if (hasCoreControl) {
 						mask |= 1 << cpuList.get(j).getId();
-					} else {
-						cpuList.get(j).setOnline(false);
 					}
+					cpuList.get(j).setOnline(false);
 				}
 			}
 			if (hasCoreControl) {
