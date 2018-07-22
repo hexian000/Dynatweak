@@ -101,7 +101,7 @@ public class BootReceiver extends BroadcastReceiver {
 						final String[] preferList = {};
 						governor.add(preferGovernor(allGovernors, preferList));
 					} else {
-						final String[] preferList = {"powersave"};
+						final String[] preferList = {};
 						governor.add(preferGovernor(allGovernors, preferList));
 					}
 					profiles.add(Dynatweak.Profiles.POWERSAVE);
