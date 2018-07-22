@@ -54,7 +54,7 @@ public class DeviceInfo {
 		nodes.add(stat);
 		nodes.add(new Memory());
 
-		final String[] mountPoint = new String[]{"/data", "/cache"};
+		final String[] mountPoint = new String[]{"/data"};
 		Set<String> devices = new HashSet<>();
 		for (String mount : mountPoint) {
 			String path = k.getBlockDevice(mount);
