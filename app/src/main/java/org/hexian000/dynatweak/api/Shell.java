@@ -34,7 +34,7 @@ public class Shell {
 		return available;
 	}
 
-	public List<String> run(String command) {
+	public synchronized List<String> run(String command) {
 		List<String> list = new ArrayList<>();
 		if (shell == null || out == null || in == null) {
 			return list;
@@ -52,7 +52,7 @@ public class Shell {
 		}
 	}
 
-	public List<String> run(List<String> commands) {
+	public synchronized List<String> run(List<String> commands) {
 		List<String> list = new ArrayList<>();
 		if (shell == null || out == null || in == null) {
 			return list;
@@ -72,7 +72,7 @@ public class Shell {
 		}
 	}
 
-	public void close() {
+	public synchronized void close() {
 		if (out != null) {
 			out.println("exit");
 			out.flush();
