@@ -19,14 +19,14 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
 public class Kernel {
 	static final Shell SU = new Shell("su");
 	private static Kernel instance = null;
-	private static Pattern mmcBlockWithPartition = Pattern.compile("^(/dev/block/mmcblk\\d+)p\\d+$");
-	private static Pattern scsiBlockWithPartition = Pattern.compile("^(/dev/block/sd[a-z])\\d+$");
+	private static final Pattern mmcBlockWithPartition = Pattern.compile("^(/dev/block/mmcblk\\d+)p\\d+$");
+	private static final Pattern scsiBlockWithPartition = Pattern.compile("^(/dev/block/sd[a-z])\\d+$");
 	private final List<CpuCore> cpuCores;
 	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
 	private Map<String, String> mountPoints;
 	private int raw_id;
-	private int clusterCount;
+	private final int clusterCount;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	private Kernel() {

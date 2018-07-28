@@ -636,7 +636,7 @@ class Memory implements DeviceNode {
 class Block implements DeviceNode {
 	private static final Pattern statPattern = Pattern.compile(
 			"(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");
-	private String block;
+	private final String block;
 	private NodeMonitor node;
 	private long[] last_value, value;
 	private long last_sample, sample;
