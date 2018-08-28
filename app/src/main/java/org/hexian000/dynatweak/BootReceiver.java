@@ -43,10 +43,10 @@ public class BootReceiver extends BroadcastReceiver {
 		k.setSysctl("kernel.random.write_wakeup_threshold", "512");
 
 		// VM
-		k.setSysctl("vm.dirty_ratio", "25");
+		k.setSysctl("vm.dirty_ratio", "40");
 		k.setSysctl("vm.dirty_background_ratio", "20");
-		k.setSysctl("vm.dirty_expire_centisecs", "3000");
-		k.setSysctl("vm.dirty_writeback_centisecs", "2000");
+		k.setSysctl("vm.dirty_expire_centisecs", "12000");
+		k.setSysctl("vm.dirty_writeback_centisecs", "6000");
 		k.setSysctl("vm.swappiness", "0");
 		k.setSysctl("vm.vfs_cache_pressure", "50");
 
@@ -502,7 +502,7 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Profiles.POWERSAVE: // powersave
 			switch (governor) {
 			case "interactive":
-				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.5) + "");
+				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.6) + "");
 				k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0) + "");
 				k.setNode(policy + "/interactive/above_hispeed_delay", "100000");
 				k.setNode(policy + "/interactive/go_hispeed_load", "99");
@@ -511,8 +511,8 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/timer_rate", "40000");
 				k.setNode(policy + "/interactive/timer_slack", "40000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
-				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
-				k.setNode(policy + "/interactive/max_freq_hysteresis", "80000");
+				k.setNode(policy + "/interactive/boostpulse_duration", "8000");
+				k.setNode(policy + "/interactive/max_freq_hysteresis", "8000");
 
 				// use scheduler tricks
 				k.setNode(policy + "/interactive/use_sched_load", "1");
@@ -528,21 +528,21 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Profiles.BALANCED: // balanced
 			switch (governor) {
 			case "interactive":
-				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.8) + "");
+				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.6) + "");
 				k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0.4) + "");
 				k.setNode(policy + "/interactive/up_threshold_any_cpu_freq", cpu.fitPercentage(0.9) + "");
 				k.setNode(policy + "/interactive/above_hispeed_delay",
 						"20000 " + cpu.fitPercentage(0.85) + ":80000");
-				k.setNode(policy + "/interactive/go_hispeed_load", "95");
+				k.setNode(policy + "/interactive/go_hispeed_load", "90");
 				k.setNode(policy + "/interactive/target_loads",
-						"80 " + cpu.fitFrequency(1000000) + ":90 ");
+						"70 " + cpu.fitFrequency(1000000) + ":80 ");
 				k.setNode(policy + "/interactive/up_threshold_any_cpu_load", "80");
 				k.setNode(policy + "/interactive/io_is_busy", "0");
 				k.setNode(policy + "/interactive/timer_rate", "20000");
 				k.setNode(policy + "/interactive/timer_slack", "20000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
-				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
-				k.setNode(policy + "/interactive/max_freq_hysteresis", "80000");
+				k.setNode(policy + "/interactive/boostpulse_duration", "8000");
+				k.setNode(policy + "/interactive/max_freq_hysteresis", "8000");
 
 				// use scheduler tricks
 				k.setNode(policy + "/interactive/use_sched_load", "1");
@@ -560,19 +560,19 @@ public class BootReceiver extends BroadcastReceiver {
 			case "interactive":
 				k.setNode(policy + "/interactive/above_hispeed_delay",
 						"20000 " + cpu.fitPercentage(0.85) + ":80000");
-				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.6) + "");
+				k.setNode(policy + "/interactive/hispeed_freq", cpu.fitPercentage(0.8) + "");
 				k.setNode(policy + "/interactive/sync_freq", cpu.fitPercentage(0.4) + "");
 				k.setNode(policy + "/interactive/up_threshold_any_cpu_freq", cpu.fitPercentage(0.8) + "");
 				k.setNode(policy + "/interactive/go_hispeed_load", "80");
 				k.setNode(policy + "/interactive/target_loads",
-						"60 " + cpu.fitFrequency(1000000) + ":80 ");
+						"60 " + cpu.fitFrequency(1000000) + ":70 ");
 				k.setNode(policy + "/interactive/up_threshold_any_cpu_load", "70");
 				k.setNode(policy + "/interactive/io_is_busy", "1");
 				k.setNode(policy + "/interactive/timer_rate", "20000");
 				k.setNode(policy + "/interactive/timer_slack", "20000");
 				k.setNode(policy + "/interactive/min_sample_time", "80000");
-				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
-				k.setNode(policy + "/interactive/max_freq_hysteresis", "40000");
+				k.setNode(policy + "/interactive/boostpulse_duration", "8000");
+				k.setNode(policy + "/interactive/max_freq_hysteresis", "8000");
 
 				// use scheduler tricks
 				k.setNode(policy + "/interactive/use_sched_load", "1");
@@ -613,7 +613,7 @@ public class BootReceiver extends BroadcastReceiver {
 				k.setNode(policy + "/interactive/io_is_busy", "1");
 				k.setNode(policy + "/interactive/timer_rate", "20000");
 				k.setNode(policy + "/interactive/timer_slack", "20000");
-				k.setNode(policy + "/interactive/min_sample_time", "80000");
+				k.setNode(policy + "/interactive/min_sample_time", "8000");
 				k.setNode(policy + "/interactive/boostpulse_duration", "80000");
 
 				// use scheduler tricks
@@ -654,7 +654,8 @@ public class BootReceiver extends BroadcastReceiver {
 		for (String path : devices) {
 			if (k.hasNode(path + "/queue/scheduler")) {
 				Log.i(LOG_TAG, "block device detected: " + path);
-				k.setNode(path + "/queue/read_ahead_kb", "1024");
+				k.setNode(path + "/queue/read_ahead_kb", "512");
+				k.setNode(path + "/queue/nr_requests", "4096");
 				List<String> schedulers = k.listBlockAvailableScheduler(path + "/queue/scheduler");
 				if (schedulers.contains("bfq")) {
 					k.setNode(path + "/queue/scheduler", "bfq");
