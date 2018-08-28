@@ -18,15 +18,15 @@ import static org.hexian000.dynatweak.Dynatweak.LOG_TAG;
  */
 public class Kernel {
 	static final Shell SU = new Shell("su");
-	private static Kernel instance = null;
 	private static final Pattern mmcBlockWithPartition = Pattern.compile("^(/dev/block/mmcblk\\d+)p\\d+$");
 	private static final Pattern scsiBlockWithPartition = Pattern.compile("^(/dev/block/sd[a-z])\\d+$");
+	private static Kernel instance = null;
 	private final List<CpuCore> cpuCores;
 	private final List<FrequencyPolicy> frequencyPolicies;
 	private final List<String> commands;
+	private final int clusterCount;
 	private Map<String, String> mountPoints;
 	private int raw_id;
-	private final int clusterCount;
 	private AdaptiveTempReader socTemp = null, batteryTemp = null, gpuTemp = null;
 
 	private Kernel() {
@@ -288,6 +288,7 @@ public class Kernel {
 		return batteryTemp != null;
 	}
 
+	@Deprecated
 	List<String> listBlockDevices() {
 		final String blockPath = "/sys/block";
 		List<String> ret = new ArrayList<>();
