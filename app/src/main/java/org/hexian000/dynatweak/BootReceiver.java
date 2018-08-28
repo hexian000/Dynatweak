@@ -250,24 +250,28 @@ public class BootReceiver extends BroadcastReceiver {
 		case Dynatweak.Profiles.DISABLED:
 			break;
 		case Dynatweak.Profiles.POWERSAVE:
+			k.setSysctl("kernel.sched_boost", "0");
 			k.setSysctl("kernel.sched_downmigrate", "80");
 			k.setSysctl("kernel.sched_upmigrate", "95");
 			k.setSysctl("kernel.sched_spill_nr_run", "2");
 			k.setSysctl("kernel.sched_spill_load", "90");
 			break;
 		case Dynatweak.Profiles.BALANCED:
+			k.setSysctl("kernel.sched_boost", "0");
 			k.setSysctl("kernel.sched_downmigrate", "70");
 			k.setSysctl("kernel.sched_upmigrate", "90");
 			k.setSysctl("kernel.sched_spill_nr_run", "4");
 			k.setSysctl("kernel.sched_spill_load", "90");
 			break;
 		case Dynatweak.Profiles.PERFORMANCE:
+			k.setSysctl("kernel.sched_boost", "1");
 			k.setSysctl("kernel.sched_downmigrate", "20");
 			k.setSysctl("kernel.sched_upmigrate", "80");
 			k.setSysctl("kernel.sched_spill_nr_run", "8");
 			k.setSysctl("kernel.sched_spill_load", "95");
 			break;
 		case Dynatweak.Profiles.GAMING:
+			k.setSysctl("kernel.sched_boost", "1");
 			k.setSysctl("kernel.sched_downmigrate", "0");
 			k.setSysctl("kernel.sched_upmigrate", "60");
 			k.setSysctl("kernel.sched_spill_nr_run", "8");
