@@ -45,7 +45,7 @@ public class BootReceiver extends BroadcastReceiver {
 		// VM
 		k.setSysctl("vm.dirty_ratio", "40");
 		k.setSysctl("vm.dirty_background_ratio", "20");
-		k.setSysctl("vm.dirty_expire_centisecs", "12000");
+		k.setSysctl("vm.dirty_expire_centisecs", "6000");
 		k.setSysctl("vm.dirty_writeback_centisecs", "6000");
 		k.setSysctl("vm.swappiness", "0");
 		k.setSysctl("vm.vfs_cache_pressure", "50");
@@ -658,7 +658,7 @@ public class BootReceiver extends BroadcastReceiver {
 		for (String path : devices) {
 			if (k.hasNode(path + "/queue/scheduler")) {
 				Log.i(LOG_TAG, "block device detected: " + path);
-				k.setNode(path + "/queue/read_ahead_kb", "512");
+				k.setNode(path + "/queue/read_ahead_kb", "1024");
 				k.setNode(path + "/queue/nr_requests", "4096");
 				List<String> schedulers = k.listBlockAvailableScheduler(path + "/queue/scheduler");
 				if (schedulers.contains("bfq")) {
